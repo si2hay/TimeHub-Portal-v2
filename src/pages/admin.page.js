@@ -3,6 +3,7 @@
  */
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
+import { cleanOldSubstitutions } from '../api/substitution.api.js'; // Импортируем очистку
 import { applyUserSettings } from '../features/settings.logic.js';
 import { renderAdminLayout } from '../ui/admin.ui.js';
 import { initScheduleTab } from './admin/schedule.admin.js';
@@ -14,7 +15,6 @@ async function initAdminPanel() {
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Проверка прав...</div>';
 
     const { data: { session } } = await supabase.auth.getSession();
-    // ИСПРАВЛЕНО: index.html теперь в корне
     if (!session) { window.location.href = `${import.meta.env.BASE_URL}index.html`; return; }
 
     const profile = await getUserProfile(session.user.id);
@@ -27,12 +27,17 @@ async function initAdminPanel() {
         return;
     }
 
+    // ФОН. ОЧИСТКА СТАРЫХ ЗАМЕН
+    // Вызываем только для тех, у кого есть права на удаление (Admin, SAP)
+    if (profile.role === 'admin' || profile.role === 'sap') {
+        cleanOldSubstitutions(); // Не ждем (без await), чтобы не тормозить загрузку интерфейса
+    }
+
     applyUserSettings(profile.settings);
 
     appDiv.innerHTML = '';
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        // ИСПРАВЛЕНО: index.html теперь в корне
         window.location.href = `${import.meta.env.BASE_URL}index.html`;
     };
 
