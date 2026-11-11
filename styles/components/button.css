@@ -98,3 +98,33 @@
 }
 
 .btn-full { width: 100%; }
+
+/* === ЭФФЕКТ "ЖИДКОСТИ" (ВОЛНА) ДЛЯ УДЕРЖАНИЯ === */
+.btn-hold-action {
+    position: relative;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    
+    /* Базовые цвета (как у btn-danger) */
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+    
+    /* Настройка градиента для волны */
+    background-image: linear-gradient(to top, #ef4444 0%, #ef4444 100%) !important;
+    background-repeat: no-repeat !important;
+    background-position: bottom !important;
+    background-size: 100% 0% !important; /* Изначально высота 0 */
+    transition: background-size 0.15s ease-out, color 0.15s ease-out, border-color 0.15s ease-out !important;
+}
+
+/* Когда зажали кнопку */
+.btn-hold-action.is-holding {
+    /* Растягиваем градиент на 100% высоты */
+    background-size: 100% 100% !important;
+    /* Медленная анимация заполнения */
+    transition: background-size 0.8s linear, color 0.15s ease-out, border-color 0.15s ease-out !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+}

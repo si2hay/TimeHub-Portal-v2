@@ -7,7 +7,6 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
     const container = document.createElement('div');
     container.className = 'admin-layout';
 
-    // Показываем вкладку "Пользователи" только Админу и SAP
     const showUsersTab = (role === 'admin' || role === 'sap');
 
     container.innerHTML = `
@@ -30,7 +29,7 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
                     ← На главную
                 </a>
                 
-                <button id="btn-admin-logout" class="btn btn-danger btn-full">Выйти</button>
+                <button id="btn-admin-logout" class="btn btn-danger btn-full btn-hold-action">Выйти</button>
             </div>
         </aside>
 
@@ -41,7 +40,39 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
         </main>
     `;
 
-    container.querySelector('#btn-admin-logout').addEventListener('click', onLogout);
+    const logoutBtn = container.querySelector('#btn-admin-logout');
+    const originalText = 'Выйти';
+    let logoutTimer = null;
+
+    const startLogoutHold = (e) => {
+        if (e.type === 'mousedown' && e.button !== 0) return; 
+        e.preventDefault(); 
+        
+        logoutBtn.classList.add('is-holding');
+        logoutBtn.textContent = 'Удерживайте...'; // Меняем текст
+        
+        logoutTimer = setTimeout(() => {
+            onLogout();
+        }, 800); 
+    };
+
+    const cancelLogoutHold = () => {
+        if (logoutTimer) {
+            clearTimeout(logoutTimer);
+            logoutTimer = null;
+        }
+        logoutBtn.classList.remove('is-holding');
+        logoutBtn.textContent = originalText; // Возвращаем текст
+    };
+
+    logoutBtn.addEventListener('mousedown', startLogoutHold);
+    logoutBtn.addEventListener('mouseup', cancelLogoutHold);
+    logoutBtn.addEventListener('mouseleave', cancelLogoutHold);
+
+    logoutBtn.addEventListener('touchstart', startLogoutHold, { passive: false });
+    logoutBtn.addEventListener('touchend', cancelLogoutHold);
+    logoutBtn.addEventListener('touchcancel', cancelLogoutHold);
+    logoutBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     return container;
 }

@@ -1,7 +1,6 @@
 /**
  * @file src/ui/offcanvas.ui.js
  * @description Off-canvas меню профиля. Содержит два экрана: профиль и настройки.
- * HTML настроек рендерится отдельно в offcanvas-settings.ui.js.
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
@@ -61,7 +60,7 @@ export function createOffcanvas(profile) {
                     Газпром колледж Волгоград
                 </a>
                 <div class="app-version">v2.0 | Сборка: ${__BUILD_DATE__}</div>
-                <button id="btn-sidebar-logout" class="btn btn-danger btn-full" style="justify-content: center;">Выйти</button>
+                <button id="btn-sidebar-logout" class="btn btn-danger btn-full btn-hold-action">Выйти</button>
             </div>
         </div>
 
@@ -82,8 +81,10 @@ export function createOffcanvas(profile) {
     document.body.appendChild(offcanvas);
 
     const viewSettings = offcanvas.querySelector('#view-settings');
+    const btnLogout = offcanvas.querySelector('#btn-sidebar-logout');
+    const originalText = 'Выйти';
 
-    // --- ЛОГИКА СИСТЕМНОЙ КНОПКИ "НАЗАД" И HISTORY API ---
+    // --- ЛОГИКА НАВИГАЦИИ ---
     const closeVisuals = () => {
         offcanvas.classList.remove('open');
         overlay.classList.remove('open');
@@ -97,106 +98,71 @@ export function createOffcanvas(profile) {
         offcanvas.classList.add('open');
         overlay.classList.add('open');
         viewSettings.classList.remove('active');
-        
-        // Пушим состояние в историю (чтобы системный "Назад" перехватывался)
         history.pushState({ menuOpen: true }, '');
-        
         if (tg) {
             tg.BackButton.show();
-            tg.BackButton.onClick(() => {
-                history.back(); // Вызываем системный "назад", который триггерит popstate
-            });
+            tg.BackButton.onClick(() => history.back());
         }
     };
 
     const close = () => {
         if (history.state?.menuOpen) {
-            history.back(); // Триггерит popstate и закрывает меню
+            history.back();
         } else {
             closeVisuals();
         }
     };
 
-    // Слушаем системный жест "Назад" (Android) или кнопку в Telegram
     window.addEventListener('popstate', () => {
-        if (offcanvas.classList.contains('open')) {
-            closeVisuals();
-        }
+        if (offcanvas.classList.contains('open')) closeVisuals();
     });
 
-    // --- ЛОГИКА СВАЙПА (Мышь + Тач) ---
-    let startX = 0;
-    let currentX = 0;
-    let startTime = 0;
-    let isSwiping = false;
+    offcanvas.querySelector('#btn-open-settings').addEventListener('click', () => {
+        viewSettings.classList.add('active');
+        history.pushState({ settingsOpen: true }, '');
+    });
 
-    const onDragStart = (e) => {
-        if (!offcanvas.classList.contains('open')) return;
-        isSwiping = true;
-        startTime = Date.now();
+    offcanvas.querySelector('#btn-back-to-main').addEventListener('click', () => {
+        viewSettings.classList.remove('active');
+        if (history.state?.settingsOpen) history.back();
+    });
+
+    // --- LONG PRESS (ВОЛНА) ---
+    let logoutTimer = null;
+
+    const startLogoutHold = (e) => {
+        if (e.type === 'mousedown' && e.button !== 0) return; 
+        e.preventDefault(); 
         
-        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        currentX = startX;
+        btnLogout.classList.add('is-holding');
+        btnLogout.textContent = 'Удерживайте...'; // Меняем текст
         
-        offcanvas.style.transition = 'none';
-        overlay.style.transition = 'none';
-        offcanvas.style.userSelect = 'none';
+        logoutTimer = setTimeout(async () => {
+            await supabase.auth.signOut();
+            window.location.href = `${base}index.html`;
+        }, 800);
     };
 
-    const onDragMove = (e) => {
-        if (!isSwiping) return;
-        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const diff = currentX - startX;
-
-        if (diff < 0) {
-            offcanvas.style.transform = `translateX(${diff}px)`;
-            const maxWidth = offcanvas.offsetWidth;
-            const opacity = 1 - (Math.abs(diff) / maxWidth);
-            overlay.style.opacity = Math.max(0, opacity);
+    const cancelLogoutHold = () => {
+        if (logoutTimer) {
+            clearTimeout(logoutTimer);
+            logoutTimer = null;
         }
+        btnLogout.classList.remove('is-holding');
+        btnLogout.textContent = originalText; // Возвращаем текст
     };
 
-    const onDragEnd = () => {
-        if (!isSwiping) return;
-        isSwiping = false;
-        
-        const diff = currentX - startX;
-        const time = Date.now() - startTime;
+    btnLogout.addEventListener('mousedown', startLogoutHold);
+    btnLogout.addEventListener('mouseup', cancelLogoutHold);
+    btnLogout.addEventListener('mouseleave', cancelLogoutHold);
 
-        offcanvas.style.transition = ''; 
-        overlay.style.transition = '';
-        offcanvas.style.userSelect = '';
+    btnLogout.addEventListener('touchstart', startLogoutHold, { passive: false });
+    btnLogout.addEventListener('touchend', cancelLogoutHold);
+    btnLogout.addEventListener('touchcancel', cancelLogoutHold);
+    btnLogout.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        // Если свайпнули далеко (больше 15%) ИЛИ быстро (flick), закрываем
-        const isFastFlick = time < 250 && diff < -30;
-        const isFarEnough = diff < -(offcanvas.offsetWidth * 0.15);
-
-        if (isFastFlick || isFarEnough) {
-            close(); 
-        } else {
-            offcanvas.style.transform = '';
-            overlay.style.opacity = '';
-        }
-    };
-
-    offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
-    offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
-    offcanvas.addEventListener('touchend', onDragEnd);
-
-    offcanvas.addEventListener('mousedown', onDragStart);
-    window.addEventListener('mousemove', onDragMove);
-    window.addEventListener('mouseup', onDragEnd);
-
-    // --- КЛИКИ ---
     overlay.addEventListener('click', close);
     offcanvas.querySelector('#btn-close-sidebar').addEventListener('click', close);
-    offcanvas.querySelector('#btn-open-settings').addEventListener('click', () => viewSettings.classList.add('active'));
-    offcanvas.querySelector('#btn-back-to-main').addEventListener('click', () => viewSettings.classList.remove('active'));
-
-    offcanvas.querySelector('#btn-sidebar-logout').addEventListener('click', async () => {
-        await supabase.auth.signOut();
-        window.location.href = `${base}index.html`;
-    });
 
     renderSettingsView(offcanvas.querySelector('#settings-view-content'), profile);
 
