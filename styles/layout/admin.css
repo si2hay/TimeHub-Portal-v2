@@ -14,30 +14,9 @@
 .admin-logo span { font-size: calc(12px * var(--font-scale)); color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .admin-nav { display: flex; flex-direction: column; gap: 8px; margin-top: 30px; flex-grow: 1; }
 
-/* Вкладки в админке (теперь зависят от цвета темы) */
-.admin-tab { 
-    background: rgba(255,255,255,0.05); 
-    border: 1px solid transparent; 
-    color: var(--text-main); 
-    padding: 12px 15px; 
-    text-align: left; 
-    border-radius: var(--border-radius); 
-    cursor: pointer; 
-    font-size: calc(15px * var(--font-scale)); 
-    transition: all 0.2s ease; 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-}
-.admin-tab:hover { 
-    background: rgba(255,255,255,0.1); 
-}
-.admin-tab.active { 
-    background: var(--accent-color); 
-    color: var(--accent-text, #fff); 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); 
-    border-color: var(--accent-color); 
-}
+.admin-tab { background: rgba(255,255,255,0.05); border: 1px solid transparent; color: var(--text-main); padding: 12px 15px; text-align: left; border-radius: var(--border-radius); cursor: pointer; font-size: calc(15px * var(--font-scale)); transition: all 0.2s ease; display: flex; align-items: center; gap: 10px; }
+.admin-tab:hover { background: rgba(255,255,255,0.1); }
+.admin-tab.active { background: var(--accent-color); color: var(--accent-text, #fff); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border-color: var(--accent-color); }
 
 .admin-footer { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: auto; }
 .admin-user { font-size: calc(12px * var(--font-scale)); color: var(--text-muted); word-break: break-all; }
@@ -48,8 +27,15 @@
 .editor-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
 .editor-controls > div { width: 180px; flex-shrink: 0; }
 
-/* Сетки Расписания и Замен */
-.sub-list-header, .sub-edit-row, .edit-lesson-row { display: grid; grid-template-columns: 50px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.5fr) 80px 80px 40px; gap: 10px; align-items: center; }
+/* Сетка (Десктоп) */
+.sub-list-header, 
+.sub-edit-row { 
+    display: grid; 
+    grid-template-columns: 50px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.5fr) 80px 80px 40px; 
+    gap: 10px; 
+    align-items: center; 
+}
+
 .sub-list-header { padding: 0 10px 10px 10px; font-size: calc(12px * var(--font-scale)); color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; }
 .sub-edit-row { background: rgba(0, 0, 0, 0.4); padding: 10px; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 8px; transition: all 0.2s; position: relative; }
 
@@ -59,10 +45,10 @@
 .sub-edit-row.is-changed .admin-input:focus { border-color: #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
 .sub-edit-row.is-changed::before { content: 'ИЗМЕНЕНО'; position: absolute; top: -10px; left: 10px; background: #ef4444; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10; }
 
-.pair-input, .pair-num { text-align: center; font-weight: bold; color: var(--accent-color); }
-input[type="number"].pair-input, input[type="number"].pair-num { -moz-appearance: textfield; appearance: textfield; }
-input[type="number"].pair-input::-webkit-outer-spin-button, input[type="number"].pair-input::-webkit-inner-spin-button,
-input[type="number"].pair-num::-webkit-outer-spin-button, input[type="number"].pair-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pair-input { text-align: center; font-weight: bold; color: var(--accent-color); }
+input[type="number"].pair-input { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"].pair-input::-webkit-outer-spin-button, 
+input[type="number"].pair-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Карточки пользователей */
 .user-admin-card { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px 20px; gap: 15px; flex-wrap: wrap; }
@@ -70,7 +56,9 @@ input[type="number"].pair-num::-webkit-outer-spin-button, input[type="number"].p
 .user-admin-controls { display: flex; gap: 10px; flex-shrink: 0; align-items: center; flex-wrap: wrap; }
 .user-admin-controls .custom-select-wrapper { width: 160px; }
 
-/* Адаптив */
+/* =========================================
+   МОБИЛЬНЫЙ АДАПТИВ
+   ========================================= */
 @media (max-width: 900px) {
     .admin-layout { flex-direction: column; height: auto; overflow: visible; }
     .admin-sidebar { width: 100%; min-width: 100%; height: auto; padding: 15px; border-right: none; border-bottom: 1px solid var(--border-color); display: flex; flex-wrap: wrap; align-items: center; gap: 15px; box-sizing: border-box; }
@@ -82,15 +70,29 @@ input[type="number"].pair-num::-webkit-outer-spin-button, input[type="number"].p
     .admin-nav::-webkit-scrollbar { display: none; }
     .admin-tab { white-space: nowrap; padding: 10px 15px; font-size: calc(14px * var(--font-scale)); text-align: center; }
     .admin-content { padding: 15px; overflow: visible; }
+    
+    /* Скрываем шапку на телефоне */
     .sub-list-header { display: none; }
-    .sub-edit-row, .edit-lesson-row { display: flex; flex-wrap: wrap; padding: 15px 12px 12px 12px; gap: 8px; align-items: center; }
-    .pair-input, .pair-num { width: 45px; flex-shrink: 0; order: 1; }
-    .btn-del-sub, .btn-del { width: 45px; flex-shrink: 0; order: 2; margin-left: auto; }
-    .sub-subject, .subject { width: 100%; order: 3; }
-    .sub-room, .room { flex: 1; order: 4; min-width: 100px; }
-    .sub-teacher, .teacher { flex: 1; order: 5; min-width: 120px; }
-    .time-start, .sub-time-start { order: 6; flex: 1; min-width: 80px; }
-    .time-end, .sub-time-end { order: 7; flex: 1; min-width: 80px; }
+    
+    /* Перестраиваем строки в Flex-контейнер */
+    .sub-edit-row { 
+        display: flex; 
+        flex-wrap: wrap; 
+        padding: 15px 12px 12px 12px; 
+        gap: 8px; 
+        align-items: center; 
+    }
+    
+    /* Распределяем элементы по порядку */
+    .pair-input { width: 45px; flex-shrink: 0; order: 1; }
+    .btn-del-sub { width: 45px; flex-shrink: 0; order: 2; margin-left: auto; }
+    .sub-subject { width: 100%; order: 3; }
+    .sub-room { flex: 1; order: 4; min-width: 100px; }
+    .sub-teacher { flex: 1; order: 5; min-width: 120px; }
+    .sub-time-start { order: 6; flex: 1; min-width: 80px; }
+    .sub-time-end { order: 7; flex: 1; min-width: 80px; }
+
+    /* Карточки юзеров */
     .user-admin-card { flex-direction: column; align-items: stretch; }
     .user-admin-controls { width: 100%; flex-wrap: wrap; }
     .user-admin-controls .custom-select-wrapper { width: 100%; }

@@ -86,31 +86,41 @@ export function renderLessonsList(lessons, onChange) {
         listContainer.innerHTML = '';
         lessons.sort((a, b) => a.pair_num - b.pair_num);
 
+        // ДОБАВЛЯЕМ ШАПКУ КАК В ЗАМЕНАХ
+        const header = document.createElement('div');
+        header.className = 'sub-list-header';
+        header.innerHTML = `<div>№</div><div>Предмет</div><div>Кабинет</div><div>Преподаватель</div><div>Начало</div><div>Конец</div><div></div>`;
+        listContainer.appendChild(header);
+
         lessons.forEach((lesson, index) => {
             const row = document.createElement('div');
-            row.className = 'edit-lesson-row';
+            // МЕНЯЕМ КЛАСС НА sub-edit-row ДЛЯ ЕДИНОГО СТИЛЯ
+            row.className = 'sub-edit-row';
+            
+            // МЕНЯЕМ КЛАССЫ ИНПУТОВ НА sub-*
             row.innerHTML = `
-                <input type="number" class="admin-input pair-num" value="${lesson.pair_num}" min="1" max="7" title="Измени номер для сдвига">
-                <input type="text" class="admin-input subject" list="dl-subjects" value="${lesson.subject || ''}" placeholder="Предмет">
-                <input type="text" class="admin-input room" list="dl-rooms" value="${lesson.room || ''}" placeholder="Кабинет">
-                <input type="text" class="admin-input teacher" list="dl-teachers" value="${lesson.teacher || ''}" placeholder="Преподаватель">
-                <input type="text" class="admin-input time-start" value="${lesson.custom_start || ''}" title="Свое время (начало)">
-                <input type="text" class="admin-input time-end" value="${lesson.custom_end || ''}" title="Свое время (конец)">
-                <button class="btn btn-danger btn-icon btn-del" title="Удалить">✖</button>
+                <input type="number" class="admin-input pair-input" value="${lesson.pair_num}" min="1" max="7" title="Измени номер для сдвига">
+                <input type="text" class="admin-input sub-subject" list="dl-subjects" value="${lesson.subject || ''}" placeholder="Предмет">
+                <input type="text" class="admin-input sub-room" list="dl-rooms" value="${lesson.room || ''}" placeholder="Кабинет">
+                <input type="text" class="admin-input sub-teacher" list="dl-teachers" value="${lesson.teacher || ''}" placeholder="Преподаватель">
+                <input type="text" class="admin-input sub-time-start" value="${lesson.custom_start || ''}" title="Свое время (начало)">
+                <input type="text" class="admin-input sub-time-end" value="${lesson.custom_end || ''}" title="Свое время (конец)">
+                <button class="btn btn-danger btn-icon btn-del-sub" title="Удалить">✖</button>
             `;
 
-            const timeStart = row.querySelector('.time-start');
-            const timeEnd = row.querySelector('.time-end');
+            const timeStart = row.querySelector('.sub-time-start');
+            const timeEnd = row.querySelector('.sub-time-end');
             setupTimeInput(timeStart, timeEnd);
             setupTimeInput(timeEnd);
 
-            row.querySelector('.subject').addEventListener('input', (e) => { lesson.subject = e.target.value; onChange(); });
-            row.querySelector('.room').addEventListener('input', (e) => { lesson.room = e.target.value; onChange(); });
-            row.querySelector('.teacher').addEventListener('input', (e) => { lesson.teacher = e.target.value; onChange(); });
+            // ОБНОВЛЯЕМ СЕЛЕКТОРЫ, ТАК КАК КЛАССЫ ПОМЕНЯЛИСЬ
+            row.querySelector('.sub-subject').addEventListener('input', (e) => { lesson.subject = e.target.value; onChange(); });
+            row.querySelector('.sub-room').addEventListener('input', (e) => { lesson.room = e.target.value; onChange(); });
+            row.querySelector('.sub-teacher').addEventListener('input', (e) => { lesson.teacher = e.target.value; onChange(); });
             timeStart.addEventListener('input', (e) => { lesson.custom_start = e.target.value; onChange(); });
             timeEnd.addEventListener('input', (e) => { lesson.custom_end = e.target.value; onChange(); });
             
-            row.querySelector('.pair-num').addEventListener('change', (e) => {
+            row.querySelector('.pair-input').addEventListener('change', (e) => {
                 const newNum = parseInt(e.target.value);
                 const oldNum = lesson.pair_num;
                 if (isNaN(newNum) || newNum < 1 || newNum > 7 || newNum === oldNum) { e.target.value = oldNum; return; }
@@ -125,10 +135,10 @@ export function renderLessonsList(lessons, onChange) {
                 renderLessonsList(lessons, onChange);
             });
 
-            row.querySelector('.subject').addEventListener('change', (e) => {
+            row.querySelector('.sub-subject').addEventListener('change', (e) => {
                 const val = e.target.value;
-                const roomInput = row.querySelector('.room');
-                const teacherInput = row.querySelector('.teacher');
+                const roomInput = row.querySelector('.sub-room');
+                const teacherInput = row.querySelector('.sub-teacher');
                 if (DICTIONARY[val]) {
                     if (!roomInput.value && DICTIONARY[val].rooms.length > 0) {
                         roomInput.value = DICTIONARY[val].rooms[0]; lesson.room = roomInput.value;
@@ -142,7 +152,7 @@ export function renderLessonsList(lessons, onChange) {
                 }
             });
 
-            row.querySelector('.btn-del').addEventListener('click', () => {
+            row.querySelector('.btn-del-sub').addEventListener('click', () => {
                 lessons.splice(index, 1); onChange(); renderLessonsList(lessons, onChange);
             });
 
@@ -152,6 +162,7 @@ export function renderLessonsList(lessons, onChange) {
 
     const addBtn = document.createElement('button');
     addBtn.className = 'btn btn-dashed';
+    addBtn.style.marginTop = '10px';
     addBtn.textContent = '+ Добавить пару';
     addBtn.onclick = () => {
         let nextNum = 1;
