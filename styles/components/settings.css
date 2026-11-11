@@ -1,0 +1,88 @@
+/**
+ * @file styles/components/settings.css
+ * @description Стили для аккордеонов, слайдеров и тумблеров в меню настроек.
+ */
+
+.settings-group { 
+    margin-bottom: 10px; 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--border-radius); 
+    overflow: hidden; 
+    background: var(--glass-bg); 
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+.settings-header { display: flex; justify-content: space-between; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.1; }
+.settings-header .arrow { transition: transform 0.3s; color: var(--accent-color); }
+.settings-group.active .settings-header .arrow { transform: rotate(180deg); }
+.settings-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s; }
+.settings-group.active .settings-content { grid-template-rows: 1fr; }
+.settings-inner { overflow: hidden; padding: 0 16px; }
+.settings-group.active .settings-inner { padding: 16px; border-top: 1px solid var(--border-color); }
+
+/* Фикс для выпадения кастомных списков за пределы аккордеона */
+.settings-group.allow-overflow { overflow: visible !important; z-index: 50; }
+.settings-inner.allow-overflow { overflow: visible !important; }
+.settings-content.allow-overflow { overflow: visible !important; }
+
+/* Строки настроек */
+.setting-row { 
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 0; 
+    border-bottom: 1px solid var(--border-color); 
+    gap: 10px; 
+    flex-wrap: nowrap;
+}
+.setting-row:last-child { border-bottom: none; }
+
+.setting-row span.label { 
+    font-size: calc(14px * var(--font-scale)); 
+    flex: 1; 
+    min-width: 0; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8); 
+    line-height: 1.2; 
+    white-space: normal; 
+    word-break: break-word;
+}
+
+/* Переопределяем стили инпутов внутри настроек */
+.setting-row input[type="text"], 
+.setting-row input[type="time"], 
+.setting-row input[type="date"],
+.setting-row .admin-select {
+    background: var(--glass-bg) !important; 
+    border: 1px solid var(--border-color);
+    color: var(--text-main) !important; 
+    padding: 8px; border-radius: 6px; font-family: inherit; outline: none; line-height: 1.1;
+    font-size: calc(14px * var(--font-scale));
+}
+.setting-row input[type="text"]:focus,
+.setting-row .admin-select:focus { border-color: var(--accent-color); }
+
+.setting-row input[type="color"] { width: 40px; height: 40px; border: none; background: transparent; cursor: pointer; padding: 0; flex-shrink: 0; }
+.setting-row input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border-color); border-radius: 8px; }
+
+/* Слайдеры */
+.slider-wrapper { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+input[type="range"] { -webkit-appearance: none; height: 6px; background: rgba(128,128,128,0.3); border-radius: 3px; outline: none; width: 60px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-color); cursor: pointer; box-shadow: 0 0 10px var(--accent-color); }
+
+.slider-input {
+    width: 45px; min-width: 45px; max-width: 45px; 
+    flex-shrink: 0; padding: 4px; text-align: center; box-sizing: border-box;
+    background: var(--glass-bg); border: 1px solid var(--border-color);
+    border-radius: 4px; color: var(--accent-color); font-weight: bold;
+    font-family: inherit; font-size: calc(14px * var(--font-scale));
+    outline: none; -moz-appearance: textfield;
+}
+.slider-input::-webkit-outer-spin-button, .slider-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Тумблеры */
+.toggle-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(128, 128, 128, 0.3); transition: .4s; border-radius: 24px; }
+.toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .toggle-slider { background-color: var(--accent-color); }
+input:checked + .toggle-slider:before { transform: translateX(22px); }

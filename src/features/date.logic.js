@@ -1,0 +1,105 @@
+/**
+ * @file src/features/date.logic.js
+ */
+import { getDebugState } from './debug.logic.js';
+
+function getNow() {
+    const debug = getDebugState();
+    if (debug.enabled) {
+        const now = new Date();
+        if (debug.date) {
+            const [y, m, d] = debug.date.split('-');
+            now.setFullYear(y, m - 1, d);
+        }
+        if (debug.time) {
+            const [h, min] = debug.time.split(':');
+            now.setHours(h, min, 0, 0);
+        }
+        return now;
+    }
+    return new Date();
+}
+
+export function getCurrentWeek() {
+    const debug = getDebugState();
+    if (debug.enabled && debug.week) return debug.week;
+
+    const startDate = new Date("2026-10-26T00:00:00");
+    const now = getNow();
+    const diffTime = now - startDate; 
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return (Math.floor(diffDays / 7) % 2) + 1;
+}
+
+export function getCurrentDay() {
+    const debug = getDebugState();
+    if (debug.enabled && debug.day) return debug.day;
+
+    const day = getNow().getDay();
+    if (day === 0 || day === 6) return 1;
+    return day;
+}
+
+export function getTodayDateString() {
+    const now = getNow();
+    const offset = now.getTimezoneOffset() * 60000;
+    return (new Date(now - offset)).toISOString().split('T')[0];
+}
+
+export function getDateByWeekOffset(offset) {
+    const now = getNow();
+    const target = new Date(now);
+    target.setDate(target.getDate() + (offset * 7));
+    const tzOffset = target.getTimezoneOffset() * 60000;
+    return (new Date(target - tzOffset)).toISOString().split('T')[0];
+}
+
+// НОВАЯ ФУНКЦИЯ: вычисляет точную дату (YYYY-MM-DD) для конкретного дня и недели
+export function getDateForDayAndWeek(dayNum, weekOffset) {
+    const now = getNow();
+    // 1. Узнаем, какой сегодня день (1 = Пн, ..., 7 = Вс)
+    const currentDayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+    
+    // 2. Находим дату понедельника текущей недели
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (currentDayOfWeek - 1) + (weekOffset * 7));
+    
+    // 3. Прибавляем нужный день
+    const target = new Date(monday);
+    target.setDate(monday.getDate() + (dayNum - 1));
+    
+    const tzOffset = target.getTimezoneOffset() * 60000;
+    return (new Date(target - tzOffset)).toISOString().split('T')[0];
+}
+
+export function getWeekForDate(dateStr) {
+    const startDate = new Date("2026-10-26T00:00:00");
+    const targetDate = new Date(dateStr);
+    const diffTime = targetDate - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return (Math.floor(diffDays / 7) % 2) + 1;
+}
+
+export function getDayOfWeekFromDate(dateStr) {
+    const date = new Date(dateStr);
+    let day = date.getDay();
+    if (day === 0 || day === 6) return 1;
+    return day;
+}
+
+export function getWeekByOffset(offset) {
+    const baseWeek = getCurrentWeek();
+    let w = (baseWeek - 1 + offset) % 2;
+    if (w < 0) w += 2;
+    return w + 1;
+}
+
+export function getDayNameRus(dayNum) {
+    const days = ['', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    return days[dayNum] || '';
+}
+
+export function getDayShortRus(dayNum) {
+    const days = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    return days[dayNum] || '';
+}

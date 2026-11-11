@@ -1,0 +1,167 @@
+/**
+ * @file src/ui/custom-datepicker.ui.js
+ * @description Кастомный календарь.
+ */
+
+export function createDatepicker(initialDate, onChange, inputId = 'custom-date-input', align = 'left') {
+    const container = document.createElement('div');
+    container.className = 'custom-datepicker-wrapper';
+
+    let currentDate = initialDate ? new Date(initialDate) : new Date();
+    let selectedDate = initialDate ? new Date(initialDate) : new Date();
+    
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.value = selectedDate.toISOString().split('T')[0];
+    hiddenInput.id = inputId;
+    container.appendChild(hiddenInput);
+
+    const uiDiv = document.createElement('div');
+    uiDiv.innerHTML = `
+        <div class="datepicker-capsule">
+            <span class="date-text">${formatDate(selectedDate)}</span>
+            <span class="calendar-icon">📅</span>
+        </div>
+        <div class="datepicker-dropdown">
+            <div class="dp-header">
+                <button class="dp-nav-btn prev">◀</button>
+                <span class="dp-month-year"></span>
+                <button class="dp-nav-btn next">▶</button>
+            </div>
+            <div class="dp-weekdays">
+                <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+            </div>
+            <div class="dp-days"></div>
+        </div>
+    `;
+    container.appendChild(uiDiv);
+
+    const capsule = uiDiv.querySelector('.datepicker-capsule');
+    const dropdown = uiDiv.querySelector('.datepicker-dropdown');
+    
+    // Выравнивание выпадающего списка (если справа не хватает места)
+    if (align === 'right') {
+        dropdown.style.left = 'auto';
+        dropdown.style.right = '0';
+    }
+
+    // Фикс обрезки в аккордеонах (как в custom-select)
+    const toggleParentStyles = (isOpen) => {
+        let el = container.parentElement;
+        while (el) {
+            if (el.classList.contains('settings-group')) {
+                el.classList.toggle('allow-overflow', isOpen);
+            }
+            if (el.classList.contains('settings-inner') || el.classList.contains('settings-content')) {
+                el.classList.toggle('allow-overflow', isOpen);
+            }
+            el = el.parentElement;
+        }
+    };
+
+    const monthYearText = uiDiv.querySelector('.dp-month-year');
+    const daysContainer = uiDiv.querySelector('.dp-days');
+
+    function formatDate(date) {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}.${m}.${y}`;
+    }
+
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        monthYearText.textContent = `${months[month]} ${year}`;
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        
+        let startDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; 
+        
+        let daysHTML = '';
+        for (let i = 0; i < startDayOfWeek; i++) {
+            daysHTML += `<div class="dp-day empty"></div>`;
+        }
+
+        for (let i = 1; i <= lastDay.getDate(); i++) {
+            const dateObj = new Date(year, month, i);
+            const offset = dateObj.getTimezoneOffset() * 60000;
+            const dateStr = (new Date(dateObj - offset)).toISOString().split('T')[0];
+            
+            const isSelected = hiddenInput.value === dateStr;
+            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+            
+            let classes = 'dp-day';
+            if (isSelected) classes += ' selected';
+            if (isToday) classes += ' today';
+            
+            daysHTML += `<div class="${classes}" data-date="${dateStr}">${i}</div>`;
+        }
+        daysContainer.innerHTML = daysHTML;
+
+        daysContainer.querySelectorAll('.dp-day:not(.empty)').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const dateStr = e.target.dataset.date;
+                selectedDate = new Date(dateStr);
+                hiddenInput.value = dateStr;
+                uiDiv.querySelector('.date-text').textContent = formatDate(selectedDate);
+                closeDropdown();
+                if (onChange) onChange(dateStr);
+                renderCalendar();
+            });
+        });
+    }
+
+    const openDropdown = () => {
+        // Закрываем другие дропдауны календаря
+        document.querySelectorAll('.datepicker-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            let p = d.parentElement;
+            while (p) {
+                if (p.classList.contains('settings-group') || p.classList.contains('settings-inner') || p.classList.contains('settings-content')) {
+                    p.classList.remove('allow-overflow');
+                }
+                p = p.parentElement;
+            }
+        });
+        
+        dropdown.classList.add('open');
+        toggleParentStyles(true);
+        renderCalendar();
+    };
+
+    const closeDropdown = () => {
+        dropdown.classList.remove('open');
+        toggleParentStyles(false);
+    };
+
+    capsule.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (dropdown.classList.contains('open')) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    });
+
+    uiDiv.querySelector('.prev').addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    });
+
+    uiDiv.querySelector('.next').addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) closeDropdown();
+    });
+
+    return container;
+}

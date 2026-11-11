@@ -1,0 +1,22 @@
+/**
+ * @file styles/themes/glass.css
+ * @description Стеклянная тема (Glassmorphism)
+ */
+
+body.theme-glass {
+    --bg-color: #0f1115;
+    --surface-color: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-blur: blur(40px);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-glass .glass-panel {
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+body.theme-glass .glass-panel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    /* Убран transform: translateY(-2px); */
+}

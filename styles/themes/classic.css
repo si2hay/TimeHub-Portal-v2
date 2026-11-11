@@ -1,0 +1,31 @@
+/**
+ * @file styles/themes/classic.css
+ * @description Классическая тема (Старая, темная)
+ */
+
+body.theme-classic {
+    --bg-color: #0f1115;
+    --surface-color: rgba(26, 29, 36, 0.95);
+    --glass-bg: rgba(26, 29, 36, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-blur: blur(10px);
+    --glass-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Красивое и плотное наведение для панелей в классике */
+body.theme-classic .glass-panel {
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+body.theme-classic .glass-panel:hover {
+    background: rgba(35, 40, 50, 0.95);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* Карточка расписания в классике (только фон, без анимации) */
+body.theme-classic .schedule-card::before {
+    background: rgba(40, 45, 55, 0.98);
+}
+body.theme-classic .schedule-card:hover::before {
+    background: rgba(50, 55, 65, 0.98);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+}

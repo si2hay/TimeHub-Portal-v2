@@ -1,0 +1,23 @@
+/**
+ * @file styles/base/fonts.css
+ * @description Подключение локальных шрифтов.
+ */
+
+@font-face {
+    font-family: 'MinecraftRus';
+    /* Vite сам подставит правильный префикс /TimeHub-Portal-v2/ */
+    src: url('/fonts/MinecraftRus.woff2') format('woff2'),
+         url('/fonts/MinecraftRus.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Tsap-Tsarap';
+    src: url('/fonts/Tsap-Tsarap.woff2') format('woff2'),
+         url('/fonts/Tsap-Tsarap.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}

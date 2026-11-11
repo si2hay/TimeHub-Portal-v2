@@ -1,0 +1,24 @@
+/**
+ * @file styles/main.css
+ * @description Точка входа для всех стилей проекта. Импортирует модули.
+ */
+
+@import './base/reset.css';
+@import './base/variables.css';
+@import './base/fonts.css';
+@import './themes/glass.css';
+@import './themes/classic.css';
+@import './layout/app-grid.css';
+@import './layout/admin.css';
+@import './components/form.css';
+@import './components/custom-select.css';
+@import './components/custom-datepicker.css';
+@import './components/settings.css';
+@import './components/header.css';
+@import './components/timer.css';
+@import './components/card.css';
+@import './components/modal.css';
+@import './components/button.css';
+@import './components/auth.css';
+
+.app-main { padding: 0 16px 30px 16px; max-width: 600px; margin: 0 auto; width: 100%; }

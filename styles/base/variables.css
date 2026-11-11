@@ -1,0 +1,55 @@
+/**
+ * @file styles/base/variables.css
+ * @description Базовые CSS-переменные, глобальные настройки шрифтов и фона.
+ */
+
+:root {
+    /* Базовые цвета (перебиваются темами) */
+    --text-main: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent-color: #0062b1;
+    --accent-hover: #0077d9;
+    --accent-text: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.1);
+    
+    /* Базовые настройки */
+    --font-family: 'MinecraftRus', monospace;
+    --font-scale: 1;
+    --transition: 0.3s ease;
+}
+
+@keyframes gradient-anim {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body.font-minecraft { --font-family: 'MinecraftRus', monospace; }
+body.font-tsap { 
+    --font-family: 'Tsap-Tsarap', sans-serif; 
+    font-size: calc(20px * var(--font-scale)); 
+    line-height: 1.1; 
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-family);
+    font-size: calc(16px * var(--font-scale));
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    background-attachment: fixed; 
+    color-scheme: dark;
+    transition: background 0.3s;
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--border-radius);
+}
