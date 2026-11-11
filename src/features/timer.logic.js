@@ -20,10 +20,9 @@ export function getTimerState(now, lessons, bells) {
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
     if (!lessons || lessons.length === 0) {
-        return { status: 'empty', text: 'На сегодня пар нет 🎉', progress: 0 };
+        return { status: 'empty', text: 'На этот день пар нет 🎉', progress: 0 };
     }
 
-    // Обогащаем расписание временными метками
     const todaySchedule = lessons.map(lesson => {
         const bell = bells.find(b => b.pair === lesson.pair_num);
         const hasCustom = lesson.custom_start && lesson.custom_end;
@@ -41,12 +40,10 @@ export function getTimerState(now, lessons, bells) {
         let hasBreak = false;
 
         if (hasCustom) {
-            // Если это замена с кастомным временем, считаем её сплошной (без перемены)
             hasBreak = false;
         } else if (bell) {
             breakStartMins = timeToMinutes(bell.breakStart);
             breakEndMins = timeToMinutes(bell.breakEnd);
-            // Если есть реальная перемена (начало не совпадает с концом)
             hasBreak = breakStartMins < breakEndMins;
         }
 
@@ -79,10 +76,8 @@ export function getTimerState(now, lessons, bells) {
     for (let i = 0; i < todaySchedule.length; i++) {
         const pair = todaySchedule[i];
         
-        // Если мы на паре (внутри её таймслота)
         if (currentMins >= pair.startMins && currentMins < pair.endMins) {
             
-            // Если пара без перемены (кастомная)
             if (!pair.hasBreak) {
                 const progress = (currentMins - pair.startMins) / (pair.endMins - pair.startMins);
                 return { 
@@ -95,7 +90,6 @@ export function getTimerState(now, lessons, bells) {
                 };
             }
 
-            // 1-я половина пары
             if (currentMins < pair.breakStartMins) {
                 const duration = pair.breakStartMins - pair.startMins;
                 const progress = duration > 0 ? (currentMins - pair.startMins) / duration : 0;
@@ -108,7 +102,6 @@ export function getTimerState(now, lessons, bells) {
                     progress 
                 };
             }
-            // Перемена внутри пары
             else if (currentMins >= pair.breakStartMins && currentMins < pair.breakEndMins) {
                 const duration = pair.breakEndMins - pair.breakStartMins;
                 const progress = duration > 0 ? (currentMins - pair.breakStartMins) / duration : 1;
@@ -121,7 +114,6 @@ export function getTimerState(now, lessons, bells) {
                     progress 
                 };
             }
-            // 2-я половина пары
             else {
                 const duration = pair.endMins - pair.breakEndMins;
                 const progress = duration > 0 ? (currentMins - pair.breakEndMins) / duration : 1;
@@ -136,7 +128,6 @@ export function getTimerState(now, lessons, bells) {
             }
         }
 
-        // Если перерыв между парами
         if (currentMins >= pair.endMins && i < todaySchedule.length - 1) {
             const nextPair = todaySchedule[i + 1];
             if (currentMins < nextPair.startMins) {

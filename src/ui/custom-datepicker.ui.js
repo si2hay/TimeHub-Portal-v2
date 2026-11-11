@@ -1,7 +1,8 @@
 /**
  * @file src/ui/custom-datepicker.ui.js
- * @description Кастомный календарь.
+ * @description Кастомный календарь с номерами учебных недель.
  */
+import { getWeekForDate } from '../features/date.logic.js';
 
 export function createDatepicker(initialDate, onChange, inputId = 'custom-date-input', align = 'left') {
     const container = document.createElement('div');
@@ -39,22 +40,16 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     const capsule = uiDiv.querySelector('.datepicker-capsule');
     const dropdown = uiDiv.querySelector('.datepicker-dropdown');
     
-    // Выравнивание выпадающего списка (если справа не хватает места)
     if (align === 'right') {
         dropdown.style.left = 'auto';
         dropdown.style.right = '0';
     }
 
-    // Фикс обрезки в аккордеонах (как в custom-select)
     const toggleParentStyles = (isOpen) => {
         let el = container.parentElement;
         while (el) {
-            if (el.classList.contains('settings-group')) {
-                el.classList.toggle('allow-overflow', isOpen);
-            }
-            if (el.classList.contains('settings-inner') || el.classList.contains('settings-content')) {
-                el.classList.toggle('allow-overflow', isOpen);
-            }
+            if (el.classList.contains('settings-group')) el.classList.toggle('allow-overflow', isOpen);
+            if (el.classList.contains('settings-inner') || el.classList.contains('settings-content')) el.classList.toggle('allow-overflow', isOpen);
             el = el.parentElement;
         }
     };
@@ -94,17 +89,26 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             const isSelected = hiddenInput.value === dateStr;
             const isToday = new Date().toISOString().split('T')[0] === dateStr;
             
+            // Получаем номер недели для этого дня
+            const weekNum = getWeekForDate(dateStr);
+            
             let classes = 'dp-day';
             if (isSelected) classes += ' selected';
             if (isToday) classes += ' today';
             
-            daysHTML += `<div class="${classes}" data-date="${dateStr}">${i}</div>`;
+            daysHTML += `
+                <div class="${classes}" data-date="${dateStr}">
+                    ${i}
+                    <span class="dp-week-num">${weekNum} нед.</span>
+                </div>
+            `;
         }
         daysContainer.innerHTML = daysHTML;
 
         daysContainer.querySelectorAll('.dp-day:not(.empty)').forEach(el => {
             el.addEventListener('click', (e) => {
-                const dateStr = e.target.dataset.date;
+                const target = e.target.closest('.dp-day');
+                const dateStr = target.dataset.date;
                 selectedDate = new Date(dateStr);
                 hiddenInput.value = dateStr;
                 uiDiv.querySelector('.date-text').textContent = formatDate(selectedDate);
@@ -116,7 +120,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     }
 
     const openDropdown = () => {
-        // Закрываем другие дропдауны календаря
         document.querySelectorAll('.datepicker-dropdown.open').forEach(d => {
             d.classList.remove('open');
             let p = d.parentElement;
@@ -140,11 +143,8 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
 
     capsule.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (dropdown.classList.contains('open')) {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
+        if (dropdown.classList.contains('open')) closeDropdown();
+        else openDropdown();
     });
 
     uiDiv.querySelector('.prev').addEventListener('click', (e) => {

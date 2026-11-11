@@ -1,10 +1,12 @@
 /**
  * @file src/ui/header.ui.js
- * @description Шапка приложения. Логика меню (off-canvas) — в offcanvas.ui.js.
+ * @description Шапка приложения с кликабельной датой.
  */
 import { createOffcanvas } from './offcanvas.ui.js';
+import { createDatepicker } from './custom-datepicker.ui.js';
+import { getTodayDateString } from '../features/date.logic.js';
 
-export function createHeader(dateString, profile) {
+export function createHeader(dateString, profile, onDateChange) {
     const header = document.createElement('header');
     header.className = 'app-header glass-panel';
 
@@ -30,7 +32,7 @@ export function createHeader(dateString, profile) {
             </div>
         </div>
 
-        <div class="header-date">${dateString}</div>
+        <div class="header-date-wrapper" id="header-date-wrapper"></div>
     `;
 
     // Создаём offcanvas один раз при рендере шапки
@@ -40,6 +42,23 @@ export function createHeader(dateString, profile) {
     header.querySelector('#streak-btn').addEventListener('click', () => {
         alert(`🔥 Твой огонек: ${streakCount} дней!`);
     });
+
+    // Добавляем календарь в шапку
+    const dateWrapper = header.querySelector('#header-date-wrapper');
+    const dp = createDatepicker(getTodayDateString(), (newDate) => {
+        if (onDateChange) onDateChange(newDate);
+    }, 'header-date-picker', 'right');
+    
+    // Стилизуем капсулу под обычный текст
+    const capsule = dp.querySelector('.datepicker-capsule');
+    capsule.classList.add('header-date-btn');
+    
+    // Убираем дефолтный текст и ставим наш красивый
+    capsule.querySelector('.date-text').textContent = dateString;
+    // Прячем иконку календаря
+    capsule.querySelector('.calendar-icon').style.display = 'none';
+    
+    dateWrapper.appendChild(dp);
 
     return header;
 }

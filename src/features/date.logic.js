@@ -22,8 +22,9 @@ export function getNow() {
 
 export function getCurrentWeek() {
     const debug = getDebugState();
-    if (debug.enabled && debug.week) return debug.week;
-
+    if (debug.enabled && debug.date) {
+        return getWeekForDate(debug.date);
+    }
     const startDate = new Date("2026-10-26T00:00:00");
     const now = getNow();
     const diffTime = now - startDate; 
@@ -33,8 +34,10 @@ export function getCurrentWeek() {
 
 export function getCurrentDay() {
     const debug = getDebugState();
-    if (debug.enabled && debug.day) return debug.day;
-
+    if (debug.enabled && debug.date) {
+        const d = new Date(debug.date).getDay();
+        return (d === 0 || d === 6) ? 1 : d;
+    }
     const day = getNow().getDay();
     if (day === 0 || day === 6) return 1;
     return day;
@@ -44,6 +47,12 @@ export function getTodayDateString() {
     const now = getNow();
     const offset = now.getTimezoneOffset() * 60000;
     return (new Date(now - offset)).toISOString().split('T')[0];
+}
+
+export function formatDateRus(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}.${m}.${y}`;
 }
 
 export function getDateByWeekOffset(offset) {
@@ -89,6 +98,11 @@ export function getWeekByOffset(offset) {
 
 export function getDayNameRus(dayNum) {
     const days = ['', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    return days[dayNum] || '';
+}
+
+export function getDayNameRusAccusative(dayNum) {
+    const days = ['', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу', 'в воскресенье'];
     return days[dayNum] || '';
 }
 

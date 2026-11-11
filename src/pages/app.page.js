@@ -6,8 +6,8 @@ import { getUserProfile } from '../api/profile.api.js';
 import { getScheduleForDay } from '../api/schedule.api.js';
 import { getSubstitutions } from '../api/substitution.api.js';
 import { 
-    getCurrentWeek, getCurrentDay, getTodayDateString,
-    getWeekByOffset, getDayNameRus, getDayShortRus,
+    getCurrentWeek, getCurrentDay, getTodayDateString, formatDateRus,
+    getWeekByOffset, getDayNameRus, getDayNameRusAccusative, getDayShortRus,
     getDateForDayAndWeek, getNow
 } from '../features/date.logic.js';
 import { getWeather, getWeatherSVG, getClothingAdvice } from '../api/weather.api.js';
@@ -31,14 +31,48 @@ async function initApp() {
     
     applyUserSettings(profile?.settings);
 
-    // При загрузке всегда ставим текущий день и текущую неделю (offset 0)
+    const now = getNow();
+    const realDay = getCurrentDay();
+    const realWeek = getCurrentWeek();
+
     let weekOffset = 0; 
-    let selectedDay = getCurrentDay(); 
+    let selectedDay = realDay; 
+    
+    const isAfterSchool = now.getHours() > 15 || (now.getHours() === 15 && now.getMinutes() > 45);
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    if (isAfterSchool || isWeekend) {
+        if (realDay === 5) {
+            selectedDay = 1;
+            weekOffset = 1;
+        } else if (realDay < 5) {
+            selectedDay = realDay + 1;
+        }
+    }
+
     let currentLessons = [];
     let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
-    const todayDay = getCurrentDay();
-    const realCurrentWeek = getCurrentWeek();
     let cache = {};
+
+    const handleDateChange = (dateStr) => {
+        const selectedDate = new Date(dateStr);
+        const todayDate = new Date(getTodayDateString());
+        
+        const currentDayOfWeek = todayDate.getDay() === 0 ? 7 : todayDate.getDay();
+        const targetDayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
+        
+        const mondayCurrent = new Date(todayDate);
+        mondayCurrent.setDate(todayDate.getDate() - (currentDayOfWeek - 1));
+        
+        const mondayTarget = new Date(selectedDate);
+        mondayTarget.setDate(selectedDate.getDate() - (targetDayOfWeek - 1));
+        
+        const diffDays = Math.round((mondayTarget - mondayCurrent) / (1000 * 60 * 60 * 24));
+        weekOffset = Math.round(diffDays / 7);
+        
+        selectedDay = (targetDayOfWeek > 5) ? 1 : targetDayOfWeek;
+        loadWeekData(true);
+    };
 
     appDiv.innerHTML = `
         <div id="header-container"></div>
@@ -63,13 +97,12 @@ async function initApp() {
                 </div>
 
                 <div class="widget-footer">
-                    Сейчас идет: <strong>${realCurrentWeek} неделя</strong>
+                    Сейчас идет: <strong>${realWeek} неделя</strong>
                 </div>
             </div>
 
             <div id="timer-container"></div>
 
-            <!-- Расписание -->
             <div class="schedule-viewport" id="schedule-viewport">
                 <div class="schedule-content-wrap" id="schedule-content"></div>
             </div>
@@ -78,7 +111,7 @@ async function initApp() {
         </main>
     `;
 
-    const header = createHeader(`${getDayNameRus(todayDay)}, ${getTodayDateString()}`, profile);
+    const header = createHeader(`${getDayNameRus(realDay)}, ${formatDateRus(getTodayDateString())}`, profile, handleDateChange);
     document.getElementById('header-container').appendChild(header);
 
     const contentEl = document.getElementById('schedule-content');
@@ -87,6 +120,18 @@ async function initApp() {
 
     const getPrevDay = (d) => d === 1 ? 5 : d - 1;
     const getNextDay = (d) => d === 5 ? 1 : d + 1;
+
+    // Хелпер для красивого вывода времени (добавляет дни, если > 24 часов)
+    function formatBigTimeLeft(mins) {
+        if (mins < 0) return "00:00";
+        const d = Math.floor(mins / (24 * 60));
+        const h = Math.floor((mins % (24 * 60)) / 60);
+        const m = mins % 60;
+        
+        if (d > 0) return `${d} д ${h} ч ${m} мин`;
+        if (h > 0) return `${h} ч ${m} мин`;
+        return `${m} мин`;
+    }
 
     function renderDots() {
         dotsContainer.innerHTML = '';
@@ -99,7 +144,6 @@ async function initApp() {
         }
     }
 
-    // direction: 1 (следующий), -1 (предыдущий), 0 (без анимации)
     function updateContent(direction = 0) {
         const w = getWeekByOffset(weekOffset);
         const dataCenter = cache[w]?.[selectedDay] || [];
@@ -116,7 +160,6 @@ async function initApp() {
         updateTimer();
         renderDots();
 
-        // ФИКС: Синхронизируем день в плашке таймера
         const hintEl = document.querySelector('.timer-btn-hint');
         if (hintEl) hintEl.textContent = getDayShortRus(selectedDay);
     }
@@ -148,7 +191,6 @@ async function initApp() {
         commitSwipe(day, dir);
     }
 
-    // --- СВАЙП ЛОГИКА ---
     let startX = 0;
     let currentX = 0;
     let isDragging = false;
@@ -244,10 +286,96 @@ async function initApp() {
         updateContent(0);
     }
 
+    // --- УМНЫЙ ТАЙМЕР ---
     const updateTimer = () => {
-        const now = getNow();
+        const currentNow = getNow();
         const bells = getBellsForGroup(userGroup);
-        const state = getTimerState(now, currentLessons, bells);
+        const currentMins = currentNow.getHours() * 60 + currentNow.getMinutes();
+
+        if (currentLessons.length === 0) {
+            updateTimerUI({ status: 'empty', text: 'На этот день пар нет', progress: 0 });
+            return;
+        }
+
+        const todayDate = new Date(getTodayDateString());
+        todayDate.setHours(0, 0, 0, 0);
+        const targetDate = new Date(getDateForDayAndWeek(selectedDay, weekOffset));
+        targetDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((targetDate - todayDate) / (1000 * 60 * 60 * 24));
+
+        // 1. БУДУЩИЙ ДЕНЬ
+        if (diffDays > 0) {
+            const firstLesson = currentLessons[0];
+            const firstBell = bells.find(b => b.pair === firstLesson.pair_num);
+            const startStr = firstLesson.custom_start || (firstBell ? firstBell.start : '08:30');
+            
+            const [h, m] = startStr.split(':').map(Number);
+            const firstStartMins = h * 60 + m;
+            const minsLeft = (diffDays * 24 * 60) + firstStartMins - currentMins;
+            
+            let dayLabel = 'завтра';
+            if (diffDays === 2) dayLabel = 'послезавтра';
+            else if (diffDays > 2) dayLabel = getDayNameRusAccusative(selectedDay); // ИСПОЛЬЗУЕМ ПАДЕЖ
+            
+            updateTimerUI({
+                status: 'waiting',
+                text: `Первая пара ${dayLabel} в ${startStr}:`,
+                subject: firstLesson.subject,
+                room: firstLesson.room,
+                timeLeft: formatBigTimeLeft(minsLeft), // ИСПОЛЬЗУЕМ КРАСИВЫЙ ФОРМАТТЕР
+                progress: 0
+            });
+            return;
+        }
+
+        // 2. ПРОШЛЫЙ ДЕНЬ
+        if (diffDays < 0) {
+            updateTimerUI({ status: 'empty', text: 'В этот день пары уже прошли', progress: 0 });
+            return;
+        }
+
+        // 3. СЕГОДНЯ
+        const state = getTimerState(currentNow, currentLessons, bells);
+        
+        if (state.status === 'finished') {
+            let nextDay = realDay;
+            let nextWeek = realWeek;
+            let daysAdded = 0;
+            
+            for (let i = 0; i < 7; i++) {
+                nextDay++;
+                daysAdded++;
+                if (nextDay > 5) { nextDay = 1; nextWeek = nextWeek === 1 ? 2 : 1; }
+                
+                const nextLessons = cache[nextWeek]?.[nextDay] || [];
+                if (nextLessons.length > 0) {
+                    const firstNext = nextLessons[0];
+                    const bell = bells.find(b => b.pair === firstNext.pair_num);
+                    const startStr = firstNext.custom_start || (bell ? bell.start : '08:30');
+                    
+                    const [h, m] = startStr.split(':').map(Number);
+                    const targetMins = h * 60 + m;
+                    const minsLeft = (daysAdded * 24 * 60) + targetMins - currentMins;
+                    
+                    let dayLabel = 'завтра';
+                    if (daysAdded === 2) dayLabel = 'послезавтра';
+                    else if (daysAdded > 2) dayLabel = getDayNameRusAccusative(nextDay); // ИСПОЛЬЗУЕМ ПАДЕЖ
+                    
+                    updateTimerUI({
+                        status: 'waiting',
+                        text: `До пары ${dayLabel} в ${startStr}:`,
+                        subject: firstNext.subject,
+                        room: firstNext.room,
+                        timeLeft: formatBigTimeLeft(minsLeft), // ИСПОЛЬЗУЕМ КРАСИВЫЙ ФОРМАТТЕР
+                        progress: 0
+                    });
+                    return;
+                }
+            }
+            updateTimerUI({ status: 'empty', text: 'Пар на ближайшие дни нет', progress: 0 });
+            return;
+        }
+
         updateTimerUI(state);
     };
     setInterval(updateTimer, 1000);

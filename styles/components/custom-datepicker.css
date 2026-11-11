@@ -28,11 +28,24 @@
 .dp-nav-btn { background: transparent; border: none; color: var(--accent-color); cursor: pointer; font-size: calc(16px * var(--font-scale)); padding: 5px; }
 .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-bottom: 5px; line-height: 1; }
 .dp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
 .dp-day {
     text-align: center; padding: 6px 0; border-radius: 4px; cursor: pointer;
     font-size: calc(13px * var(--font-scale)); color: var(--text-main); transition: background 0.2s; line-height: 1.1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .dp-day:hover { background: rgba(128,128,128,0.2); }
 .dp-day.today { border: 1px solid var(--accent-color); }
 .dp-day.selected { background: var(--accent-color); color: var(--accent-text, #fff); font-weight: bold; }
 .dp-day.empty { cursor: default; }
+
+/* Номер учебной недели */
+.dp-week-num {
+    font-size: 8px;
+    color: var(--text-muted);
+    opacity: 0.8;
+    margin-top: 2px;
+    line-height: 1;
+    pointer-events: none;
+}
+.dp-day.selected .dp-week-num { color: rgba(255,255,255,0.8); }
