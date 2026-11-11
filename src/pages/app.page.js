@@ -20,6 +20,16 @@ import { renderSchedule, renderSkeleton } from '../ui/schedule.ui.js';
 import { renderTimer, updateTimerUI } from '../ui/timer.ui.js';
 
 async function initApp() {
+    // Инициализация Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.disableVerticalSwipes(); // Запрещаем свайп вниз для закрытия бота
+        tg.enableClosingConfirmation(); // Спрашиваем подтверждение при закрытии
+        tg.BackButton.hide(); // На главной странице кнопка "Назад" не нужна
+    }
+
     const appDiv = document.getElementById('app');
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Загрузка...</div>';
 
@@ -121,7 +131,6 @@ async function initApp() {
     const getPrevDay = (d) => d === 1 ? 5 : d - 1;
     const getNextDay = (d) => d === 5 ? 1 : d + 1;
 
-    // Хелпер для красивого вывода времени (добавляет дни, если > 24 часов)
     function formatBigTimeLeft(mins) {
         if (mins < 0) return "00:00";
         const d = Math.floor(mins / (24 * 60));
@@ -286,7 +295,6 @@ async function initApp() {
         updateContent(0);
     }
 
-    // --- УМНЫЙ ТАЙМЕР ---
     const updateTimer = () => {
         const currentNow = getNow();
         const bells = getBellsForGroup(userGroup);
@@ -303,7 +311,6 @@ async function initApp() {
         targetDate.setHours(0, 0, 0, 0);
         const diffDays = Math.round((targetDate - todayDate) / (1000 * 60 * 60 * 24));
 
-        // 1. БУДУЩИЙ ДЕНЬ
         if (diffDays > 0) {
             const firstLesson = currentLessons[0];
             const firstBell = bells.find(b => b.pair === firstLesson.pair_num);
@@ -315,26 +322,24 @@ async function initApp() {
             
             let dayLabel = 'завтра';
             if (diffDays === 2) dayLabel = 'послезавтра';
-            else if (diffDays > 2) dayLabel = getDayNameRusAccusative(selectedDay); // ИСПОЛЬЗУЕМ ПАДЕЖ
+            else if (diffDays > 2) dayLabel = getDayNameRusAccusative(selectedDay);
             
             updateTimerUI({
                 status: 'waiting',
                 text: `Первая пара ${dayLabel} в ${startStr}:`,
                 subject: firstLesson.subject,
                 room: firstLesson.room,
-                timeLeft: formatBigTimeLeft(minsLeft), // ИСПОЛЬЗУЕМ КРАСИВЫЙ ФОРМАТТЕР
+                timeLeft: formatBigTimeLeft(minsLeft),
                 progress: 0
             });
             return;
         }
 
-        // 2. ПРОШЛЫЙ ДЕНЬ
         if (diffDays < 0) {
             updateTimerUI({ status: 'empty', text: 'В этот день пары уже прошли', progress: 0 });
             return;
         }
 
-        // 3. СЕГОДНЯ
         const state = getTimerState(currentNow, currentLessons, bells);
         
         if (state.status === 'finished') {
@@ -359,14 +364,14 @@ async function initApp() {
                     
                     let dayLabel = 'завтра';
                     if (daysAdded === 2) dayLabel = 'послезавтра';
-                    else if (daysAdded > 2) dayLabel = getDayNameRusAccusative(nextDay); // ИСПОЛЬЗУЕМ ПАДЕЖ
+                    else if (daysAdded > 2) dayLabel = getDayNameRusAccusative(nextDay);
                     
                     updateTimerUI({
                         status: 'waiting',
                         text: `До пары ${dayLabel} в ${startStr}:`,
                         subject: firstNext.subject,
                         room: firstNext.room,
-                        timeLeft: formatBigTimeLeft(minsLeft), // ИСПОЛЬЗУЕМ КРАСИВЫЙ ФОРМАТТЕР
+                        timeLeft: formatBigTimeLeft(minsLeft),
                         progress: 0
                     });
                     return;

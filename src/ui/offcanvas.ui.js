@@ -7,6 +7,7 @@ import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
 
 export function createOffcanvas(profile) {
+    const tg = window.Telegram?.WebApp;
     const base = import.meta.env.BASE_URL;
     const userRole = profile?.role || 'student';
     const userGroup = profile?.group_name || 'Нет группы';
@@ -68,14 +69,34 @@ export function createOffcanvas(profile) {
 
     const viewSettings = offcanvas.querySelector('#view-settings');
 
+    const handleTelegramBack = () => {
+        if (viewSettings.classList.contains('active')) {
+            viewSettings.classList.remove('active');
+        } else {
+            close();
+        }
+    };
+
     const open = () => {
         offcanvas.classList.add('open');
         overlay.classList.add('open');
         viewSettings.classList.remove('active');
+        
+        // Показываем системную кнопку "Назад" в Telegram
+        if (tg) {
+            tg.BackButton.show();
+            tg.BackButton.onClick(handleTelegramBack);
+        }
     };
+
     const close = () => {
         offcanvas.classList.remove('open');
         overlay.classList.remove('open');
+        
+        // Скрываем кнопку "Назад" в Telegram
+        if (tg) {
+            tg.BackButton.hide();
+        }
     };
 
     overlay.addEventListener('click', close);
@@ -85,11 +106,9 @@ export function createOffcanvas(profile) {
 
     offcanvas.querySelector('#btn-sidebar-logout').addEventListener('click', async () => {
         await supabase.auth.signOut();
-        // ИСПРАВЛЕНО: index.html теперь в корне
         window.location.href = `${base}index.html`;
     });
 
-    // Рендерим экран настроек (HTML + вся логика внутри)
     renderSettingsView(offcanvas.querySelector('#settings-view-content'), profile);
 
     return { element: offcanvas, open, close };
