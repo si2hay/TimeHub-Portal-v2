@@ -118,6 +118,19 @@ async function initApp() {
             </div>
 
             <div class="schedule-dots" id="schedule-dots"></div>
+
+            <!-- НОВЫЙ ПОДВАЛ -->
+            <footer class="app-footer">
+                <div class="footer-content">
+                    <p class="footer-info">
+                        Заполнение расписаний и замен выполняется вручную через удобный билдер. 
+                        Чтобы стать старостой группы, обратитесь в <a href="https://t.me/+sq9RDqa2I2A3M2Iy" target="_blank">наш Telegram-чат</a>.
+                    </p>
+                    <p class="footer-thanks">
+                        Авторы проекта будут благодарны за любую поддержку и идеи ☕
+                    </p>
+                </div>
+            </footer>
         </main>
     `;
 
@@ -235,7 +248,6 @@ async function initApp() {
         const diffX = currentX - startX;
         const diffY = currentY - startY;
         
-        // Если жест больше по горизонтали, предотвращаем скролл сайта
         if (Math.abs(diffX) > Math.abs(diffY) && e.cancelable) {
             e.preventDefault();
         }
@@ -270,7 +282,6 @@ async function initApp() {
     window.addEventListener('mousemove', onDragMove);
     window.addEventListener('mouseup', onDragEnd);
 
-    // ВАЖНО: passive: false, чтобы можно было предотвратить скролл сайта
     viewport.addEventListener('touchstart', onDragStart, { passive: true });
     viewport.addEventListener('touchmove', onDragMove, { passive: false });
     window.addEventListener('touchend', onDragEnd);

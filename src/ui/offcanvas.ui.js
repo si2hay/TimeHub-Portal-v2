@@ -4,6 +4,7 @@
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
+import { getConsultations } from '../api/consultations.api.js';
 
 export function createOffcanvas(profile) {
     const tg = window.Telegram?.WebApp;
@@ -39,23 +40,37 @@ export function createOffcanvas(profile) {
                 ${(userRole === 'admin' || userRole === 'sap' || userRole === 'starosta') ? `
                     <a href="${base}pages/admin.html" class="btn btn-primary btn-full btn-admin">Перейти в Админ-панель</a>
                 ` : ''}
-                <div class="sidebar-section-title">КАСТОМИЗАЦИЯ</div>
+                
+                <div class="sidebar-section-title">СПРАВОЧНИК</div>
+                <div class="reference-grid">
+                    <button class="btn btn-ghost btn-full" id="btn-ref-calc">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16.01" y2="14"></line><line x1="12" y1="14" x2="12.01" y2="14"></line><line x1="8" y1="14" x2="8.01" y2="14"></line><line x1="16" y1="18" x2="16.01" y2="18"></line><line x1="12" y1="18" x2="12.01" y2="18"></line><line x1="8" y1="18" x2="8.01" y2="18"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
+                        Калькулятор
+                    </button>
+                    <button class="btn btn-ghost btn-full" id="btn-ref-libs">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        Библиотеки
+                    </button>
+                    <button class="btn btn-ghost btn-full" id="btn-ref-consults">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        Консультации
+                    </button>
+                </div>
+
+                <div class="sidebar-section-title" style="margin-top: 20px;">КАСТОМИЗАЦИЯ</div>
                 <button class="btn btn-ghost btn-full btn-settings" id="btn-open-settings">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     Настройки
                 </button>
             </div>
             <div class="offcanvas-footer">
+                <a href="https://t.me/+sq9RDqa2I2A3M2Iy" target="_blank" rel="noopener noreferrer" class="college-link" style="border-color: #0088cc; color: #0088cc;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                    Наш Telegram-чат
+                </a>
                 <a href="https://volgograd-college.gazprom.ru/" target="_blank" rel="noopener noreferrer" class="college-link">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 21h18"></path>
-                        <path d="M3 10h18"></path>
-                        <path d="M5 6l7-3 7 3"></path>
-                        <path d="M4 10v11"></path>
-                        <path d="M20 10v11"></path>
-                        <path d="M8 14v3"></path>
-                        <path d="M12 14v3"></path>
-                        <path d="M16 14v3"></path>
+                        <path d="M3 21h18"></path><path d="M3 10h18"></path><path d="M5 6l7-3 7 3"></path><path d="M4 10v11"></path><path d="M20 10v11"></path><path d="M8 14v3"></path><path d="M12 14v3"></path><path d="M16 14v3"></path>
                     </svg>
                     Газпром колледж Волгоград
                 </a>
@@ -127,16 +142,184 @@ export function createOffcanvas(profile) {
         if (history.state?.settingsOpen) history.back();
     });
 
+    // --- МОДАЛЬНЫЕ ОКНА ---
+    const showModal = (title, contentHTML) => {
+        let modal = document.getElementById('global-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'global-modal';
+            modal.className = 'global-modal';
+            document.body.appendChild(modal);
+            
+            // ФИКС: Закрытие по клику на фон
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        }
+        modal.innerHTML = `
+            <div class="global-modal-content glass-panel">
+                <div class="modal-header">
+                    <h3>${title}</h3>
+                    <button class="icon-btn" onclick="document.getElementById('global-modal').classList.remove('active')">✖</button>
+                </div>
+                <div class="modal-body">${contentHTML}</div>
+            </div>
+        `;
+        modal.classList.add('active');
+    };
+
+    // 1. Калькулятор
+    offcanvas.querySelector('#btn-ref-calc').addEventListener('click', () => {
+        showModal('Калькулятор оценок', `
+            <div class="calc-container">
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Введи свои оценки (например: 5, 4, 3 или 55543)</p>
+                <input type="text" id="calc-input" class="admin-input" placeholder="5, 4, 3, 5...">
+                <div class="calc-result" id="calc-result">Средний балл: -</div>
+            </div>
+        `);
+        const input = document.getElementById('calc-input');
+        const result = document.getElementById('calc-result');
+        
+        input.addEventListener('input', () => {
+            // ФИКС: Ищем только цифры от 1 до 5 в любом тексте
+            const matches = input.value.match(/[1-5]/g);
+            
+            if (!matches || matches.length === 0) { 
+                result.textContent = 'Средний балл: -'; 
+                return; 
+            }
+            
+            const grades = matches.map(Number);
+            const avg = grades.reduce((a, b) => a + b, 0) / grades.length;
+            result.textContent = `Средний балл: ${avg.toFixed(2)}`;
+        });
+        input.focus();
+    });
+
+    // 2. Библиотеки
+    offcanvas.querySelector('#btn-ref-libs').addEventListener('click', () => {
+        showModal('Электронные библиотеки', `
+            <div class="libs-list">
+                <a href="https://e.lanbook.com/" target="_blank" class="lib-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <div>
+                        <h4>ЭБС Лань</h4>
+                        <p>Учебники и пособия для студентов</p>
+                    </div>
+                </a>
+                <a href="https://academia-moscow.ru/" target="_blank" class="lib-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <div>
+                        <h4>Академия-Москва</h4>
+                        <p>Издательский центр «Академия»</p>
+                    </div>
+                </a>
+            </div>
+        `);
+    });
+
+    // 3. Консультации
+    offcanvas.querySelector('#btn-ref-consults').addEventListener('click', async () => {
+        showModal('Расписание консультаций', '<div style="text-align:center; padding:20px;">Загрузка...</div>');
+        const consults = await getConsultations();
+        
+        if (consults.length === 0) {
+            document.querySelector('#global-modal .modal-body').innerHTML = '<div class="admin-placeholder">Пока нет назначенных консультаций</div>';
+            return;
+        }
+
+        const days = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
+        let html = '<div class="consults-list">';
+        consults.forEach(c => {
+            html += `
+                <div class="consult-card">
+                    <div class="consult-day">${days[c.day_num]}</div>
+                    <div class="consult-info">
+                        <div class="consult-subject">${c.subject}</div>
+                        <div class="consult-details">
+                            <span>⏰ ${c.time_start} - ${c.time_end}</span>
+                            ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        document.querySelector('#global-modal .modal-body').innerHTML = html;
+    });
+
+    // --- ЛОГИКА СВАЙПА (ВОЗВРАЩЕНА) ---
+    let startX = 0;
+    let currentX = 0;
+    let startTime = 0;
+    let isSwiping = false;
+
+    const onDragStart = (e) => {
+        // Если открыта модалка, свайп не работаем
+        if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
+        isSwiping = true;
+        startTime = Date.now();
+        
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        currentX = startX;
+        
+        offcanvas.style.transition = 'none';
+        overlay.style.transition = 'none';
+        offcanvas.style.userSelect = 'none';
+    };
+
+    const onDragMove = (e) => {
+        if (!isSwiping) return;
+        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const diff = currentX - startX;
+
+        if (diff < 0) {
+            offcanvas.style.transform = `translateX(${diff}px)`;
+            const maxWidth = offcanvas.offsetWidth;
+            const opacity = 1 - (Math.abs(diff) / maxWidth);
+            overlay.style.opacity = Math.max(0, opacity);
+        }
+    };
+
+    const onDragEnd = () => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        
+        const diff = currentX - startX;
+        const time = Date.now() - startTime;
+
+        offcanvas.style.transition = ''; 
+        overlay.style.transition = '';
+        offcanvas.style.userSelect = '';
+
+        const isFastFlick = time < 250 && diff < -30;
+        const isFarEnough = diff < -(offcanvas.offsetWidth * 0.15);
+
+        if (isFastFlick || isFarEnough) {
+            close(); 
+        } else {
+            offcanvas.style.transform = '';
+            overlay.style.opacity = '';
+        }
+    };
+
+    offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
+    offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
+    offcanvas.addEventListener('touchend', onDragEnd);
+
+    offcanvas.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
     // --- LONG PRESS (ВОЛНА) ---
     let logoutTimer = null;
-
     const startLogoutHold = (e) => {
         if (e.type === 'mousedown' && e.button !== 0) return; 
         e.preventDefault(); 
-        
         btnLogout.classList.add('is-holding');
-        btnLogout.textContent = 'Удерживайте...'; // Меняем текст
-        
+        btnLogout.textContent = 'Удерживайте...';
         logoutTimer = setTimeout(async () => {
             await supabase.auth.signOut();
             window.location.href = `${base}index.html`;
@@ -149,13 +332,12 @@ export function createOffcanvas(profile) {
             logoutTimer = null;
         }
         btnLogout.classList.remove('is-holding');
-        btnLogout.textContent = originalText; // Возвращаем текст
+        btnLogout.textContent = originalText;
     };
 
     btnLogout.addEventListener('mousedown', startLogoutHold);
     btnLogout.addEventListener('mouseup', cancelLogoutHold);
     btnLogout.addEventListener('mouseleave', cancelLogoutHold);
-
     btnLogout.addEventListener('touchstart', startLogoutHold, { passive: false });
     btnLogout.addEventListener('touchend', cancelLogoutHold);
     btnLogout.addEventListener('touchcancel', cancelLogoutHold);
