@@ -9,16 +9,23 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    /* Используем dvh и переменную Telegram */
+    min-height: 100dvh; 
+    min-height: var(--tg-viewport-stable-height, 100dvh);
+    
     width: 100%;
     position: relative;
-    overflow: hidden;
+    /* Разрешаем скролл, если клавиатура перекрывает форму */
+    overflow-y: auto; 
+    overflow-x: hidden;
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
 }
 
 /* Синий размытый логотип на фоне */
 .auth-bg-logo {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -26,7 +33,6 @@
     height: 80vw;
     max-width: 700px;
     max-height: 700px;
-    /* Красим логотип в синий через фильтры и размываем */
     background: url('/logo.png') no-repeat center center;
     background-size: contain;
     filter: blur(60px) brightness(0.6) sepia(1) hue-rotate(180deg) saturate(4);
@@ -54,6 +60,7 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
     z-index: 1;
     position: relative;
+    margin: auto; /* Центрируем при скролле */
     animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -84,6 +91,8 @@
     outline: none;
     transition: all 0.3s ease;
     box-sizing: border-box;
+    /* Фикс для iOS, чтобы не было зума при фокусе (но на всякий случай) */
+    font-size: max(16px, calc(16px * var(--font-scale)));
 }
 
 .input-group input:focus {
@@ -106,7 +115,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Кнопки (ТЕПЕРЬ СТРОГО ДЛЯ СТРАНИЦЫ ВХОДА) */
+/* Кнопки */
 .auth-buttons {
     display: flex;
     gap: 12px;
@@ -127,7 +136,6 @@
     transition: transform 0.1s, box-shadow 0.2s;
 }
 
-/* Используем переменные темы, чтобы не ломать другие страницы */
 .auth-container .btn-primary { 
     background: linear-gradient(135deg, var(--accent-color), var(--accent-hover)); 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
