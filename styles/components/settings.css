@@ -12,7 +12,7 @@
     backdrop-filter: blur(10px);
     position: relative;
 }
-.settings-header { display: flex; justify-content: space-between; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.1; }
+.settings-header { display: flex; justify-content: space-between; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.1; touch-action: manipulation; }
 .settings-header .arrow { transition: transform 0.3s; color: var(--accent-color); }
 .settings-group.active .settings-header .arrow { transform: rotate(180deg); }
 .settings-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s; }
@@ -47,7 +47,7 @@
     word-break: break-word;
 }
 
-/* Переопределяем стили инпутов внутри настроек */
+/* Инпуты внутри настроек */
 .setting-row input[type="text"], 
 .setting-row input[type="time"], 
 .setting-row input[type="date"],
@@ -61,14 +61,85 @@
 .setting-row input[type="text"]:focus,
 .setting-row .admin-select:focus { border-color: var(--accent-color); }
 
-.setting-row input[type="color"] { width: 40px; height: 40px; border: none; background: transparent; cursor: pointer; padding: 0; flex-shrink: 0; }
-.setting-row input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border-color); border-radius: 8px; }
+/* Цветовые инпуты */
+.setting-row input[type="color"] { 
+    width: 40px; height: 40px; 
+    border: none; 
+    background: transparent; 
+    cursor: pointer; 
+    padding: 0; 
+    flex-shrink: 0; 
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+}
+.setting-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.setting-row input[type="color"]::-webkit-color-swatch { 
+    border: 1px solid var(--border-color); 
+    border-radius: 8px; 
+}
+.setting-row input[type="color"]:focus { outline: none; }
 
-/* Слайдеры */
-.slider-wrapper { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-input[type="range"] { -webkit-appearance: none; height: 6px; background: rgba(128,128,128,0.3); border-radius: 3px; outline: none; width: 60px; }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-color); cursor: pointer; box-shadow: 0 0 10px var(--accent-color); }
+/* === ПОЛЗУНКИ (Range) === */
+.slider-wrapper { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    flex: 1; 
+    min-width: 0; 
+    justify-content: flex-end;
+}
 
+input[type="range"] { 
+    -webkit-appearance: none; 
+    appearance: none;
+    /* Большая хит-зона для пальца */
+    height: 24px; 
+    width: 100%;
+    min-width: 80px;
+    max-width: 140px;
+    background: transparent; 
+    outline: none; 
+    /* Запрещаем браузеру скроллить страницу при перетаскивании */
+    touch-action: none;
+    cursor: pointer;
+}
+
+/* Дорожка (серая полоса) */
+input[type="range"]::-webkit-slider-runnable-track { 
+    height: 6px; 
+    background: rgba(128, 128, 128, 0.3); 
+    border-radius: 3px; 
+}
+input[type="range"]::-moz-range-track { 
+    height: 6px; 
+    background: rgba(128, 128, 128, 0.3); 
+    border-radius: 3px; 
+}
+
+/* Бегунок (кружок) */
+input[type="range"]::-webkit-slider-thumb { 
+    -webkit-appearance: none; 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    background: var(--accent-color); 
+    cursor: pointer; 
+    /* Центрируем бегунок по вертикали (6 - 20) / 2 = -7 */
+    margin-top: -7px; 
+    box-shadow: none; /* Убрали тяжелую тень */
+}
+input[type="range"]::-moz-range-thumb { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    background: var(--accent-color); 
+    cursor: pointer; 
+    border: none;
+    box-shadow: none;
+}
+
+/* Числовое поле рядом с ползунком */
 .slider-input {
     width: 45px; min-width: 45px; max-width: 45px; 
     flex-shrink: 0; padding: 4px; text-align: center; box-sizing: border-box;
@@ -76,13 +147,24 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16p
     border-radius: 4px; color: var(--accent-color); font-weight: bold;
     font-family: inherit; font-size: calc(14px * var(--font-scale));
     outline: none; -moz-appearance: textfield;
+    touch-action: manipulation;
 }
 .slider-input::-webkit-outer-spin-button, .slider-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Тумблеры */
-.toggle-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; }
+.toggle-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; touch-action: manipulation; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(128, 128, 128, 0.3); transition: .4s; border-radius: 24px; }
 .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .toggle-slider { background-color: var(--accent-color); }
 input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ === */
+@media (max-width: 768px) {
+    .settings-group {
+        /* Убираем backdrop-filter с каждой группы настроек */
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(20, 22, 26, 0.6);
+    }
+}
