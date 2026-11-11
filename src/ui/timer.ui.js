@@ -80,13 +80,14 @@ export function updateTimerUI(state) {
     const timeValueEl = document.getElementById('t-time-value');
     if (timeLabel && timeValueEl) {
         if (state.timeLeft) {
-            timeLabel.style.display = 'inline';
-            timeValueEl.style.display = 'inline';
+            timeLabel.style.visibility = 'visible';
+            timeValueEl.style.visibility = 'visible';
             timeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
             timeValueEl.textContent = state.timeLeft;
         } else {
-            timeLabel.style.display = 'none';
-            timeValueEl.style.display = 'none';
+            // ИСПОЛЬЗУЕМ visibility ВМЕСТО display, ЧТОБЫ СОХРАНИТЬ МЕСТО
+            timeLabel.style.visibility = 'hidden';
+            timeValueEl.style.visibility = 'hidden';
         }
     }
     
@@ -106,13 +107,13 @@ export function updateTimerUI(state) {
         const fsTimeLabel = document.getElementById('fs-time-label');
         const fsTimeValue = document.getElementById('fs-time-value');
         if (state.timeLeft) {
-            fsTimeLabel.style.display = 'block';
-            fsTimeValue.style.display = 'block';
+            fsTimeLabel.style.visibility = 'visible';
+            fsTimeValue.style.visibility = 'visible';
             fsTimeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
             fsTimeValue.textContent = state.timeLeft;
         } else {
-            fsTimeLabel.style.display = 'none';
-            fsTimeValue.style.display = 'none';
+            fsTimeLabel.style.visibility = 'hidden';
+            fsTimeValue.style.visibility = 'hidden';
         }
 
         const fsProgress = document.getElementById('fs-progress');

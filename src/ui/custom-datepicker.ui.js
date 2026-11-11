@@ -64,6 +64,13 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         return `${d}.${m}.${y}`;
     }
 
+    function getLocalDateStr(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
     function renderCalendar() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
@@ -81,15 +88,15 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             daysHTML += `<div class="dp-day empty"></div>`;
         }
 
+        const todayStr = getLocalDateStr(new Date());
+
         for (let i = 1; i <= lastDay.getDate(); i++) {
             const dateObj = new Date(year, month, i);
-            const offset = dateObj.getTimezoneOffset() * 60000;
-            const dateStr = (new Date(dateObj - offset)).toISOString().split('T')[0];
+            const dateStr = getLocalDateStr(dateObj);
             
             const isSelected = hiddenInput.value === dateStr;
-            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+            const isToday = todayStr === dateStr;
             
-            // Получаем номер недели для этого дня
             const weekNum = getWeekForDate(dateStr);
             
             let classes = 'dp-day';
@@ -111,7 +118,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
                 const dateStr = target.dataset.date;
                 selectedDate = new Date(dateStr);
                 hiddenInput.value = dateStr;
-                uiDiv.querySelector('.date-text').textContent = formatDate(selectedDate);
                 closeDropdown();
                 if (onChange) onChange(dateStr);
                 renderCalendar();
@@ -162,6 +168,15 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     document.addEventListener('click', (e) => {
         if (!container.contains(e.target)) closeDropdown();
     });
+
+    // МЕТОД ДЛЯ ВНЕШНЕГО ОБНОВЛЕНИЯ ДАТЫ
+    container.updateDate = (newDateStr) => {
+        if (!newDateStr) return;
+        selectedDate = new Date(newDateStr);
+        currentDate = new Date(newDateStr);
+        hiddenInput.value = newDateStr;
+        renderCalendar();
+    };
 
     return container;
 }

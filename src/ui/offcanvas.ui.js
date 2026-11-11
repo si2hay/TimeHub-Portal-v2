@@ -1,10 +1,15 @@
 /**
  * @file src/ui/offcanvas.ui.js
- * @description Off-canvas меню профиля. Содержит два экрана: профиль и настройки.
+ * @description Off-canvas меню профиля с кнопкой полного расписания.
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
 import { getConsultations } from '../api/consultations.api.js';
+import { getScheduleForDay } from '../api/schedule.api.js';
+import { getSubstitutions } from '../api/substitution.api.js';
+import { applySubstitutions } from '../features/substitution.logic.js';
+import { getWeekByOffset, getDateForDayAndWeek } from '../features/date.logic.js';
+import { renderFullSchedule } from './schedule.ui.js';
 
 export function createOffcanvas(profile) {
     const tg = window.Telegram?.WebApp;
@@ -41,6 +46,12 @@ export function createOffcanvas(profile) {
                     <a href="${base}pages/admin.html" class="btn btn-primary btn-full btn-admin">Перейти в Админ-панель</a>
                 ` : ''}
                 
+                <!-- КНОПКА ПОЛНОГО РАСПИСАНИЯ (ТЕПЕРЬ В ТЕМЕ) -->
+                <button class="btn btn-primary btn-full" id="btn-full-schedule" style="margin-bottom: 15px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Расписание на 2 недели
+                </button>
+
                 <div class="sidebar-section-title">СПРАВОЧНИК</div>
                 <div class="reference-grid">
                     <button class="btn btn-ghost btn-full" id="btn-ref-calc">
@@ -151,7 +162,6 @@ export function createOffcanvas(profile) {
             modal.className = 'global-modal';
             document.body.appendChild(modal);
             
-            // ФИКС: Закрытие по клику на фон
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
@@ -170,6 +180,37 @@ export function createOffcanvas(profile) {
         modal.classList.add('active');
     };
 
+    // --- ЛОГИКА ПОЛНОГО РАСПИСАНИЯ ---
+    offcanvas.querySelector('#btn-full-schedule').addEventListener('click', async () => {
+        showModal('Расписание на 2 недели', '<div style="text-align:center; padding:20px;">Загрузка всех дней...</div>');
+        
+        try {
+            const weeksData = [];
+            for (let w = 0; w < 2; w++) {
+                const weekNum = getWeekByOffset(w);
+                const days = [];
+                
+                for (let d = 1; d <= 5; d++) {
+                    const targetDate = getDateForDayAndWeek(d, w);
+                    const [lessons, subs] = await Promise.all([
+                        getScheduleForDay(userGroup, weekNum, d),
+                        getSubstitutions(targetDate, userGroup)
+                    ]);
+                    days.push({ 
+                        dayNum: d, 
+                        lessons: applySubstitutions(lessons, subs) 
+                    });
+                }
+                weeksData.push({ weekNum, days });
+            }
+
+            document.querySelector('#global-modal .modal-body').innerHTML = '';
+            document.querySelector('#global-modal .modal-body').appendChild(renderFullSchedule(userGroup, weeksData));
+        } catch (err) {
+            document.querySelector('#global-modal .modal-body').innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка загрузки расписания.</div>';
+        }
+    });
+
     // 1. Калькулятор
     offcanvas.querySelector('#btn-ref-calc').addEventListener('click', () => {
         showModal('Калькулятор оценок', `
@@ -183,7 +224,6 @@ export function createOffcanvas(profile) {
         const result = document.getElementById('calc-result');
         
         input.addEventListener('input', () => {
-            // ФИКС: Ищем только цифры от 1 до 5 в любом тексте
             const matches = input.value.match(/[1-5]/g);
             
             if (!matches || matches.length === 0) { 
@@ -250,14 +290,13 @@ export function createOffcanvas(profile) {
         document.querySelector('#global-modal .modal-body').innerHTML = html;
     });
 
-    // --- ЛОГИКА СВАЙПА (ВОЗВРАЩЕНА) ---
+    // --- ЛОГИКА СВАЙПА ---
     let startX = 0;
     let currentX = 0;
     let startTime = 0;
     let isSwiping = false;
 
     const onDragStart = (e) => {
-        // Если открыта модалка, свайп не работаем
         if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
         isSwiping = true;
         startTime = Date.now();

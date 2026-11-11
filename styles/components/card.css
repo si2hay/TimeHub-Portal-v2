@@ -184,7 +184,7 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 
 /* === ПОДВАЛ САЙТА === */
 .app-footer {
-    margin-top: 40px;
+    margin-top: auto; /* ПРИЖИМАЕТ К НИЗУ */
     padding: 20px 0 30px 0;
     border-top: 1px solid var(--border-color);
     text-align: center;
@@ -194,8 +194,31 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 .footer-content { display: flex; flex-direction: column; gap: 10px; }
 .footer-info a { color: var(--accent-color); text-decoration: none; font-weight: bold; }
 .footer-info a:hover { text-decoration: underline; }
-.footer-thanks { 
-    font-size: 11px; 
-    opacity: 0.5; 
-    font-style: italic; 
+.footer-thanks { font-size: 11px; opacity: 0.5; font-style: italic; }
+
+/* === МОДАЛКА ПОЛНОГО РАСПИСАНИЯ === */
+.full-schedule-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.full-schedule-week-title {
+    color: var(--accent-color);
+    font-size: 18px;
+    margin: 20px 0 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+.full-schedule-week-title:first-child { margin-top: 0; }
+.full-schedule-day-title {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 15px 0 5px 0;
+    font-weight: bold;
+}
+.full-schedule-container .schedule-slide-content {
+    gap: 8px;
+}
+.full-schedule-container .schedule-card {
+    min-height: 70px;
 }

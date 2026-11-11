@@ -1,14 +1,14 @@
 /**
  * @file src/ui/schedule.ui.js
- * @description Отрисовка карточек расписания и скелетонов загрузки.
+ * @description Отрисовка карточек расписания, скелетонов и полного расписания.
  */
 import { getBellsForGroup } from '../features/bells.logic.js';
+import { getDayNameRus } from '../features/date.logic.js'; // Импорт для заголовков
 
 export function renderSkeleton() {
     const container = document.createElement('div');
     container.className = 'schedule-slide-content';
     
-    // Создаем 4 карточки-заглушки
     for (let i = 0; i < 4; i++) {
         const card = document.createElement('div');
         card.className = 'schedule-card glass-panel skeleton-card';
@@ -29,7 +29,7 @@ export function renderSchedule(lessons, userGroup) {
     container.className = 'schedule-slide-content';
 
     if (!lessons || lessons.length === 0) {
-        container.innerHTML = `<div class="glass-panel empty-schedule">На этот день пар нет 🎉</div>`;
+        container.innerHTML = `<div class="glass-panel empty-schedule" style="padding: 15px; font-size: 14px;">На этот день пар нет 🎉</div>`;
         return container;
     }
 
@@ -46,7 +46,8 @@ export function renderSchedule(lessons, userGroup) {
 
         const card = document.createElement('div');
         card.className = cardClass;
-        card.style.animationDelay = `${index * 0.05}s`;
+        // В полном расписании лучше без задержки анимации, чтобы не тормозило
+        card.style.animationDelay = `0s`;
 
         card.innerHTML = `
             ${badge}
@@ -63,6 +64,31 @@ export function renderSchedule(lessons, userGroup) {
             </div>
         `;
         container.appendChild(card);
+    });
+
+    return container;
+}
+
+// НОВАЯ ФУНКЦИЯ ДЛЯ ОТРИСОВКИ 2 НЕДЕЛЬ
+export function renderFullSchedule(groupName, weeksData) {
+    const container = document.createElement('div');
+    container.className = 'full-schedule-container';
+
+    weeksData.forEach(week => {
+        const weekHeader = document.createElement('h3');
+        weekHeader.className = 'full-schedule-week-title';
+        weekHeader.textContent = `${week.weekNum} неделя`;
+        container.appendChild(weekHeader);
+
+        week.days.forEach(day => {
+            const dayHeader = document.createElement('h4');
+            dayHeader.className = 'full-schedule-day-title';
+            dayHeader.textContent = getDayNameRus(day.dayNum);
+            container.appendChild(dayHeader);
+
+            const scheduleContent = renderSchedule(day.lessons, groupName);
+            container.appendChild(scheduleContent);
+        });
     });
 
     return container;

@@ -33,11 +33,29 @@
     text-align: center; padding: 6px 0; border-radius: 4px; cursor: pointer;
     font-size: calc(13px * var(--font-scale)); color: var(--text-main); transition: background 0.2s; line-height: 1.1;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px solid transparent;
 }
 .dp-day:hover { background: rgba(128,128,128,0.2); }
-.dp-day.today { border: 1px solid var(--accent-color); }
-.dp-day.selected { background: var(--accent-color); color: var(--accent-text, #fff); font-weight: bold; }
-.dp-day.empty { cursor: default; }
+
+/* СЕГОДНЯШНИЙ ДЕНЬ — РАМКА */
+.dp-day.today { 
+    border: 2px solid var(--accent-color); 
+    font-weight: bold;
+}
+
+/* ВЫБРАННЫЙ ДЕНЬ — ЗАЛИВКА */
+.dp-day.selected { 
+    background: var(--accent-color); 
+    color: var(--accent-text, #fff); 
+    font-weight: bold; 
+}
+
+/* Если день и сегодняшний, и выбранный — рамка внутри заливки */
+.dp-day.today.selected {
+    box-shadow: 0 0 0 2px var(--bg-color) inset;
+}
+
+.dp-day.empty { cursor: default; border: none; }
 
 /* Номер учебной недели */
 .dp-week-num {

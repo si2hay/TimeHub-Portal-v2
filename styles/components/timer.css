@@ -14,7 +14,9 @@
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    justify-content: center; /* Центрируем контент, если он скрыт */
     gap: 10px;
+    min-height: 165px; /* ФИКС: Жесткая высота, чтобы таймер не прыгал */
 }
 
 .timer-widget:hover {
@@ -26,6 +28,7 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+    min-height: 45px; /* ФИКС: Чтобы заголовок не прыгал, если пусто */
 }
 
 .timer-status {
@@ -39,6 +42,7 @@
     font-weight: bold;
     color: var(--accent-color);
     line-height: 1.2;
+    min-height: 24px; /* ФИКС: Не дает прыгать, если пусто */
 }
 
 .timer-room {
@@ -52,6 +56,7 @@
     align-items: baseline;
     gap: 10px;
     margin-top: 5px;
+    min-height: 40px; /* ФИКС: Фиксируем место под цифры */
 }
 
 .time-label {

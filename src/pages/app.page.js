@@ -15,12 +15,12 @@ import { getTimerState } from '../features/timer.logic.js';
 import { getBellsForGroup } from '../features/bells.logic.js';
 import { applySubstitutions } from '../features/substitution.logic.js';
 import { applyUserSettings } from '../features/settings.logic.js';
+import { updateStreak } from '../features/streak.logic.js'; 
 import { createHeader } from '../ui/header.ui.js';
 import { renderSchedule, renderSkeleton } from '../ui/schedule.ui.js';
 import { renderTimer, updateTimerUI } from '../ui/timer.ui.js';
 
 async function initApp() {
-    // Инициализация Telegram WebApp
     const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.ready();
@@ -36,37 +36,60 @@ async function initApp() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = `${import.meta.env.BASE_URL}index.html`; return; }
 
-    const profile = await getUserProfile(session.user.id);
+    let profile = await getUserProfile(session.user.id);
     const userGroup = profile?.group_name || '26 АТП-2Бо';
     
     applyUserSettings(profile?.settings);
 
+    // --- ЛОГИКА СТРИКА ---
+    const settings = profile?.settings || {};
+    const currentStreak = settings.streak || 0;
+    const lastVisit = settings.last_streak_timestamp || null;
+    
+    const { newStreak, isUpdated } = updateStreak(currentStreak, lastVisit);
+    
+    if (isUpdated) {
+        const newSettings = { ...settings, streak: newStreak, last_streak_timestamp: Date.now() };
+        profile.settings = newSettings;
+        supabase.from('profiles').update({ settings: newSettings }).eq('id', session.user.id).then();
+    }
+
     const now = getNow();
-    const realDay = getCurrentDay();
+    const realDay = getCurrentDay(); 
     const realWeek = getCurrentWeek();
+    const realDateStr = getTodayDateString();
 
     let weekOffset = 0; 
     let selectedDay = realDay; 
     
-    const isAfterSchool = now.getHours() > 15 || (now.getHours() === 15 && now.getMinutes() > 45);
-    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
-    
-    if (isAfterSchool || isWeekend) {
-        if (realDay === 5) {
-            selectedDay = 1;
-            weekOffset = 1;
-        } else if (realDay < 5) {
-            selectedDay = realDay + 1;
-        }
-    }
-
     let currentLessons = [];
     let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
     let cache = {};
 
+    // ФОРМАТ ДЛЯ ШАПКИ (ВСЕГДА 2 СТРОКИ, СВЕРХУ СЕГОДНЯ, СНИЗУ ВЫБРАН)
+    const getHeaderDateString = () => {
+        const realStr = `${getDayNameRus(realDay)}, ${formatDateRus(realDateStr)}`;
+        const targetDate = getDateForDayAndWeek(selectedDay, weekOffset);
+        const targetStr = `${getDayNameRus(selectedDay)}, ${formatDateRus(targetDate)}`;
+
+        return `Сегодня: ${realStr}<br><span style="font-size: 10px; opacity: 0.7; font-weight: normal;">Выбран: ${targetStr}</span>`;
+    };
+
+    // Синхронизация шапки и календаря
+    const updateHeaderAndCalendar = () => {
+        const textEl = document.querySelector('.header-date-wrapper .date-text');
+        if (textEl) textEl.innerHTML = getHeaderDateString();
+        
+        const dpWrapper = document.querySelector('.custom-datepicker-wrapper');
+        if (dpWrapper && dpWrapper.updateDate) {
+            const newDate = getDateForDayAndWeek(selectedDay, weekOffset);
+            dpWrapper.updateDate(newDate);
+        }
+    };
+
     const handleDateChange = (dateStr) => {
         const selectedDate = new Date(dateStr);
-        const todayDate = new Date(getTodayDateString());
+        const todayDate = new Date(realDateStr);
         
         const currentDayOfWeek = todayDate.getDay() === 0 ? 7 : todayDate.getDay();
         const targetDayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
@@ -81,6 +104,8 @@ async function initApp() {
         weekOffset = Math.round(diffDays / 7);
         
         selectedDay = (targetDayOfWeek > 5) ? 1 : targetDayOfWeek;
+        
+        updateHeaderAndCalendar();
         loadWeekData(true);
     };
 
@@ -119,12 +144,11 @@ async function initApp() {
 
             <div class="schedule-dots" id="schedule-dots"></div>
 
-            <!-- НОВЫЙ ПОДВАЛ -->
             <footer class="app-footer">
                 <div class="footer-content">
                     <p class="footer-info">
-                        Заполнение расписаний и замен выполняется вручную через удобный билдер. 
-                        Чтобы стать старостой группы, обратитесь в <a href="https://t.me/+sq9RDqa2I2A3M2Iy" target="_blank">наш Telegram-чат</a>.
+                        Заполнение расписаний и замен для своей группы выполняется старостой вручную через удобный билдер. 
+                        Чтобы стать старостой, обратитесь в <a href="https://t.me/+sq9RDqa2I2A3M2Iy" target="_blank">наш Telegram-чат</a>.
                     </p>
                     <p class="footer-thanks">
                         Авторы проекта будут благодарны за любую поддержку и идеи ☕
@@ -134,7 +158,7 @@ async function initApp() {
         </main>
     `;
 
-    const header = createHeader(`${getDayNameRus(realDay)}, ${formatDateRus(getTodayDateString())}`, profile, handleDateChange);
+    const header = createHeader(getHeaderDateString(), profile, handleDateChange, isUpdated);
     document.getElementById('header-container').appendChild(header);
 
     const contentEl = document.getElementById('schedule-content');
@@ -170,6 +194,8 @@ async function initApp() {
         const w = getWeekByOffset(weekOffset);
         const dataCenter = cache[w]?.[selectedDay] || [];
 
+        const startHeight = contentEl.offsetHeight;
+        
         contentEl.innerHTML = '';
         const newContent = renderSchedule(dataCenter, userGroup);
         
@@ -184,6 +210,19 @@ async function initApp() {
 
         const hintEl = document.querySelector('.timer-btn-hint');
         if (hintEl) hintEl.textContent = getDayShortRus(selectedDay);
+
+        const endHeight = contentEl.offsetHeight;
+        contentEl.style.height = `${startHeight}px`;
+        contentEl.style.overflow = 'hidden';
+        void contentEl.offsetHeight;
+        contentEl.style.transition = 'height 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        contentEl.style.height = `${endHeight}px`;
+
+        setTimeout(() => {
+            contentEl.style.height = '';
+            contentEl.style.transition = '';
+            contentEl.style.overflow = '';
+        }, 300);
     }
 
     let isAnimating = false;
@@ -202,6 +241,8 @@ async function initApp() {
             contentEl.style.transform = '';
             contentEl.style.opacity = '';
             selectedDay = newDay;
+            
+            updateHeaderAndCalendar();
             updateContent(direction);
             isAnimating = false;
         }, 100);
@@ -330,102 +371,98 @@ async function initApp() {
         updateContent(0);
     }
 
+    // --- УМНЫЙ ТАЙМЕР ---
     const updateTimer = () => {
         const currentNow = getNow();
         const bells = getBellsForGroup(userGroup);
         const currentMins = currentNow.getHours() * 60 + currentNow.getMinutes();
 
-        if (currentLessons.length === 0) {
-            updateTimerUI({ status: 'empty', text: 'На этот день пар нет', progress: 0 });
-            return;
-        }
-
-        const todayDate = new Date(getTodayDateString());
+        const todayDate = new Date(realDateStr);
         todayDate.setHours(0, 0, 0, 0);
         const targetDate = new Date(getDateForDayAndWeek(selectedDay, weekOffset));
         targetDate.setHours(0, 0, 0, 0);
         const diffDays = Math.round((targetDate - todayDate) / (1000 * 60 * 60 * 24));
-
-        if (diffDays > 0) {
-            const firstLesson = currentLessons[0];
-            const firstBell = bells.find(b => b.pair === firstLesson.pair_num);
-            const startStr = firstLesson.custom_start || (firstBell ? firstBell.start : '08:30');
-            
-            const [h, m] = startStr.split(':').map(Number);
-            const firstStartMins = h * 60 + m;
-            const minsLeft = (diffDays * 24 * 60) + firstStartMins - currentMins;
-            
-            let dayLabel = 'завтра';
-            if (diffDays === 2) dayLabel = 'послезавтра';
-            else if (diffDays > 2) dayLabel = getDayNameRusAccusative(selectedDay);
-            
-            updateTimerUI({
-                status: 'waiting',
-                text: `Первая пара ${dayLabel} в ${startStr}:`,
-                subject: firstLesson.subject,
-                room: firstLesson.room,
-                timeLeft: formatBigTimeLeft(minsLeft),
-                progress: 0
-            });
-            return;
-        }
 
         if (diffDays < 0) {
             updateTimerUI({ status: 'empty', text: 'В этот день пары уже прошли', progress: 0 });
             return;
         }
 
-        const state = getTimerState(currentNow, currentLessons, bells);
-        
-        if (state.status === 'finished') {
-            let nextDay = realDay;
-            let nextWeek = realWeek;
-            let daysAdded = 0;
-            
-            for (let i = 0; i < 7; i++) {
-                nextDay++;
+        if (diffDays === 0 && currentLessons.length > 0) {
+            const state = getTimerState(currentNow, currentLessons, bells);
+            updateTimerUI(state);
+            return;
+        }
+
+        // Ищем ближайший день с парами (с учетом выходных)
+        let searchDay = selectedDay;
+        let searchWeekOffset = weekOffset;
+        let daysAdded = 0;
+        let foundLesson = null;
+        let foundStartStr = null;
+
+        for (let i = 0; i < 14; i++) {
+            if (i > 0) {
+                searchDay++;
+                if (searchDay > 5) { searchDay = 1; searchWeekOffset++; }
                 daysAdded++;
-                if (nextDay > 5) { nextDay = 1; nextWeek = nextWeek === 1 ? 2 : 1; }
-                
-                const nextLessons = cache[nextWeek]?.[nextDay] || [];
-                if (nextLessons.length > 0) {
-                    const firstNext = nextLessons[0];
-                    const bell = bells.find(b => b.pair === firstNext.pair_num);
-                    const startStr = firstNext.custom_start || (bell ? bell.start : '08:30');
-                    
-                    const [h, m] = startStr.split(':').map(Number);
-                    const targetMins = h * 60 + m;
-                    const minsLeft = (daysAdded * 24 * 60) + targetMins - currentMins;
-                    
-                    let dayLabel = 'завтра';
-                    if (daysAdded === 2) dayLabel = 'послезавтра';
-                    else if (daysAdded > 2) dayLabel = getDayNameRusAccusative(nextDay);
-                    
-                    updateTimerUI({
-                        status: 'waiting',
-                        text: `До пары ${dayLabel} в ${startStr}:`,
-                        subject: firstNext.subject,
-                        room: firstNext.room,
-                        timeLeft: formatBigTimeLeft(minsLeft),
-                        progress: 0
-                    });
-                    return;
-                }
             }
+
+            const w = getWeekByOffset(searchWeekOffset);
+            const lessons = cache[w]?.[searchDay] || [];
+            
+            // Пропускаем сегодня, если мы ищем в будущем
+            if (i === 0 && diffDays === 0 && lessons.length === 0) continue;
+
+            if (lessons.length > 0) {
+                foundLesson = lessons[0];
+                const bell = bells.find(b => b.pair === foundLesson.pair_num);
+                foundStartStr = foundLesson.custom_start || (bell ? bell.start : '08:30');
+                break;
+            }
+        }
+
+        if (!foundLesson) {
             updateTimerUI({ status: 'empty', text: 'Пар на ближайшие дни нет', progress: 0 });
             return;
         }
 
-        updateTimerUI(state);
+        const [h, m] = foundStartStr.split(':').map(Number);
+        const targetMins = h * 60 + m;
+        
+        const currentDateObj = new Date(realDateStr);
+        currentDateObj.setHours(0,0,0,0);
+        const foundDateObj = new Date(getDateForDayAndWeek(searchDay, searchWeekOffset));
+        foundDateObj.setHours(0,0,0,0);
+        const finalDiffDays = Math.round((foundDateObj - currentDateObj) / (1000 * 60 * 60 * 24));
+
+        const minsLeft = (finalDiffDays * 24 * 60) + targetMins - currentMins;
+
+        let dayLabel = 'сегодня';
+        if (finalDiffDays === 1) dayLabel = 'завтра';
+        else if (finalDiffDays === 2) dayLabel = 'послезавтра';
+        else if (finalDiffDays > 2) dayLabel = getDayNameRusAccusative(searchDay);
+
+        updateTimerUI({
+            status: 'waiting',
+            text: `До пары ${dayLabel} в ${foundStartStr}:`,
+            subject: foundLesson.subject,
+            room: foundLesson.room,
+            timeLeft: formatBigTimeLeft(minsLeft),
+            progress: 0
+        });
     };
     setInterval(updateTimer, 1000);
 
     document.getElementById('btn-prev-week').addEventListener('click', () => {
         weekOffset -= 1;
+        updateHeaderAndCalendar();
         loadWeekData(true); 
     });
+    
     document.getElementById('btn-next-week').addEventListener('click', () => {
         weekOffset += 1;
+        updateHeaderAndCalendar();
         loadWeekData(true); 
     });
 

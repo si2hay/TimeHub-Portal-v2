@@ -3,11 +3,12 @@
  */
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
-import { cleanOldSubstitutions } from '../api/substitution.api.js'; // Импортируем очистку
+import { cleanOldSubstitutions } from '../api/substitution.api.js'; 
 import { applyUserSettings } from '../features/settings.logic.js';
 import { renderAdminLayout } from '../ui/admin.ui.js';
 import { initScheduleTab } from './admin/schedule.admin.js';
 import { initSubstitutionTab } from './admin/substitution.admin.js';
+import { initConsultationsTab } from './admin/consultations.admin.js'; // НОВЫЙ ИМПОРТ
 import { initUsersTab } from './admin/users.admin.js';
 
 async function initAdminPanel() {
@@ -28,9 +29,8 @@ async function initAdminPanel() {
     }
 
     // ФОН. ОЧИСТКА СТАРЫХ ЗАМЕН
-    // Вызываем только для тех, у кого есть права на удаление (Admin, SAP)
     if (profile.role === 'admin' || profile.role === 'sap') {
-        cleanOldSubstitutions(); // Не ждем (без await), чтобы не тормозить загрузку интерфейса
+        cleanOldSubstitutions(); 
     }
 
     applyUserSettings(profile.settings);
@@ -41,7 +41,6 @@ async function initAdminPanel() {
         window.location.href = `${import.meta.env.BASE_URL}index.html`;
     };
 
-    // Передаем роль в макет, чтобы скрыть вкладку "Пользователи"
     const layout = renderAdminLayout(session.user.email, profile.role, handleLogout);
     appDiv.appendChild(layout);
 
@@ -60,6 +59,7 @@ async function initAdminPanel() {
 
         if (target === 'schedule') initScheduleTab(contentArea);
         if (target === 'substitutions') initSubstitutionTab(contentArea);
+        if (target === 'consultations') initConsultationsTab(contentArea); // НОВАЯ ВКЛАДКА
         if (target === 'users' && allowedRoles.includes(profile.role) && profile.role !== 'starosta') {
             initUsersTab(contentArea);
         }

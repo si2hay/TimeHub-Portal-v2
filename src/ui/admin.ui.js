@@ -7,7 +7,10 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
     const container = document.createElement('div');
     container.className = 'admin-layout';
 
+    // Показываем вкладку "Пользователи" только Админу и SAP
     const showUsersTab = (role === 'admin' || role === 'sap');
+    // Консультации тоже только для админа и SAP
+    const showConsultsTab = (role === 'admin' || role === 'sap');
 
     container.innerHTML = `
         <aside class="admin-sidebar">
@@ -19,6 +22,7 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
             <nav class="admin-nav">
                 <button class="admin-tab active" data-target="schedule">📅 Расписание</button>
                 <button class="admin-tab" data-target="substitutions">⚡ Замены</button>
+                ${showConsultsTab ? `<button class="admin-tab" data-target="consultations">🎓 Консультации</button>` : ''}
                 ${showUsersTab ? `<button class="admin-tab" data-target="users">👥 Пользователи</button>` : ''}
             </nav>
 
@@ -49,7 +53,7 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
         e.preventDefault(); 
         
         logoutBtn.classList.add('is-holding');
-        logoutBtn.textContent = 'Удерживайте...'; // Меняем текст
+        logoutBtn.textContent = 'Удерживайте...'; 
         
         logoutTimer = setTimeout(() => {
             onLogout();
@@ -62,7 +66,7 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
             logoutTimer = null;
         }
         logoutBtn.classList.remove('is-holding');
-        logoutBtn.textContent = originalText; // Возвращаем текст
+        logoutBtn.textContent = originalText; 
     };
 
     logoutBtn.addEventListener('mousedown', startLogoutHold);

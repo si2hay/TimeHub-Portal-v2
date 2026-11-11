@@ -1,7 +1,33 @@
 /**
  * @file styles/layout/app-grid.css
- * @description Сетка основного приложения.
+ * @description Сетка основного приложения и флекс-верстка для прижатия подвала.
  */
+
+html, body {
+    height: 100%;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Фоллбэк */
+    min-height: 100dvh; /* Точная высота с учетом панелей браузера */
+}
+
+.app-main {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; 
+    padding: 0 16px 30px 16px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.app-footer {
+    margin-top: auto; /* ПРИЖИМАЕТ ПОДВАЛ К НИЗУ */
+}
+
 .app-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
