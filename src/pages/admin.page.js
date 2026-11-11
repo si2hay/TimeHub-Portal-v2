@@ -14,7 +14,8 @@ async function initAdminPanel() {
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Проверка прав...</div>';
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = `${import.meta.env.BASE_URL}pages/index.html`; return; }
+    // ИСПРАВЛЕНО: index.html теперь в корне
+    if (!session) { window.location.href = `${import.meta.env.BASE_URL}index.html`; return; }
 
     const profile = await getUserProfile(session.user.id);
     
@@ -31,7 +32,8 @@ async function initAdminPanel() {
     appDiv.innerHTML = '';
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        window.location.href = `${import.meta.env.BASE_URL}pages/index.html`;
+        // ИСПРАВЛЕНО: index.html теперь в корне
+        window.location.href = `${import.meta.env.BASE_URL}index.html`;
     };
 
     // Передаем роль в макет, чтобы скрыть вкладку "Пользователи"

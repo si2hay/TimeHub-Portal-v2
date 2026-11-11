@@ -24,7 +24,8 @@ async function initApp() {
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Загрузка...</div>';
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = `${import.meta.env.BASE_URL}pages/index.html`; return; }
+    // ИСПРАВЛЕНО: index.html теперь в корне
+    if (!session) { window.location.href = `${import.meta.env.BASE_URL}index.html`; return; }
 
     const profile = await getUserProfile(session.user.id);
     const userGroup = profile?.group_name || '26 АТП-2Бо';

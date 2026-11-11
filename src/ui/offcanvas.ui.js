@@ -36,7 +36,7 @@ export function createOffcanvas(profile) {
                     <div class="sidebar-group">Группа: ${userGroup}</div>
                     <div class="sidebar-role">${userRole.toUpperCase()}</div>
                 </div>
-                ${(userRole === 'admin' || userRole === 'sap') ? `
+                ${(userRole === 'admin' || userRole === 'sap' || userRole === 'starosta') ? `
                     <a href="${base}pages/admin.html" class="btn btn-primary btn-full btn-admin">Перейти в Админ-панель</a>
                 ` : ''}
                 <div class="sidebar-section-title">КАСТОМИЗАЦИЯ</div>
@@ -85,7 +85,8 @@ export function createOffcanvas(profile) {
 
     offcanvas.querySelector('#btn-sidebar-logout').addEventListener('click', async () => {
         await supabase.auth.signOut();
-        window.location.href = `${base}pages/index.html`;
+        // ИСПРАВЛЕНО: index.html теперь в корне
+        window.location.href = `${base}index.html`;
     });
 
     // Рендерим экран настроек (HTML + вся логика внутри)

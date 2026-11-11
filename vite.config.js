@@ -7,7 +7,7 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'pages/index.html'),
+        index: resolve(__dirname, 'index.html'), // Теперь в корне
         app: resolve(__dirname, 'pages/app.html'),
         admin: resolve(__dirname, 'pages/admin.html')
       }
