@@ -107,12 +107,84 @@ export function createOffcanvas(profile) {
         offcanvas.classList.remove('open');
         overlay.classList.remove('open');
         
+        // Сбрасываем inline-стили (на случай, если закрыли свайпом)
+        offcanvas.style.transform = '';
+        overlay.style.opacity = '';
+        offcanvas.style.userSelect = '';
+        
         // Скрываем кнопку "Назад" в Telegram
         if (tg) {
             tg.BackButton.hide();
         }
     };
 
+    // --- ЛОГИКА СВАЙПА (Мышь + Тач) ---
+    let startX = 0;
+    let currentX = 0;
+    let isSwiping = false;
+
+    const onDragStart = (e) => {
+        if (!offcanvas.classList.contains('open')) return;
+        isSwiping = true;
+        
+        // Определяем тип события (мышь или тач)
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        currentX = startX;
+        
+        // Отключаем transition для мгновенной реакции
+        offcanvas.style.transition = 'none';
+        overlay.style.transition = 'none';
+        offcanvas.style.userSelect = 'none'; // Чтобы не выделялся текст
+    };
+
+    const onDragMove = (e) => {
+        if (!isSwiping) return;
+        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const diff = currentX - startX;
+
+        // Двигаем только влево (diff < 0)
+        if (diff < 0) {
+            offcanvas.style.transform = `translateX(${diff}px)`;
+            
+            // Плавно уменьшаем прозрачность затемнения
+            const maxWidth = offcanvas.offsetWidth;
+            const opacity = 1 - (Math.abs(diff) / maxWidth);
+            overlay.style.opacity = Math.max(0, opacity);
+        }
+    };
+
+    const onDragEnd = () => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        
+        const diff = currentX - startX;
+
+        // Возвращаем transition и user-select
+        offcanvas.style.transition = ''; 
+        overlay.style.transition = '';
+        offcanvas.style.userSelect = '';
+
+        // Если свайпнули больше чем на 30% ширины меню — закрываем
+        if (diff < -(offcanvas.offsetWidth * 0.3)) {
+            close(); 
+        } else {
+            // Иначе возвращаем на место
+            offcanvas.style.transform = '';
+            overlay.style.opacity = '';
+        }
+    };
+
+    // Обработчики для тача (телефон)
+    offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
+    offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
+    offcanvas.addEventListener('touchend', onDragEnd);
+
+    // Обработчики для мыши (ПК)
+    offcanvas.addEventListener('mousedown', onDragStart);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragEnd);
+
+    // --- СТАРЫЕ ОБРАБОТЧИКИ ---
     overlay.addEventListener('click', close);
     offcanvas.querySelector('#btn-close-sidebar').addEventListener('click', close);
     offcanvas.querySelector('#btn-open-settings').addEventListener('click', () => viewSettings.classList.add('active'));

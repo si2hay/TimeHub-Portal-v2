@@ -42,7 +42,25 @@
 .offcanvas-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 9998; opacity: 0; visibility: hidden; transition: all 0.3s; }
 .offcanvas-overlay.open { opacity: 1; visibility: visible; }
 
-.offcanvas { position: fixed; top: 0; left: 0; width: 400px; max-width: 95vw; height: 100vh; z-index: 9999; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 5px 0 30px rgba(0,0,0,0.5); overflow: hidden; margin-left: -1px; border-right: 1px solid var(--border-color); }
+.offcanvas { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 400px; 
+    max-width: 95vw; 
+    height: 100vh; 
+    z-index: 9999; 
+    display: flex; 
+    flex-direction: column; 
+    transform: translateX(-100%); 
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+    box-shadow: 5px 0 30px rgba(0,0,0,0.5); 
+    overflow: hidden; 
+    margin-left: -1px; 
+    border-right: 1px solid var(--border-color); 
+    /* Добавлено для корректной работы свайпа и скролла */
+    touch-action: pan-y; 
+}
 .offcanvas.open { transform: translateX(0); }
 
 .offcanvas-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--surface-color); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
