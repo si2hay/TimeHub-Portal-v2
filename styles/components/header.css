@@ -67,6 +67,37 @@
 .btn-settings { justify-content: flex-start; padding: 12px; margin-bottom: 5px; }
 .btn-full { width: 100%; }
 
+/* Ссылка на сайт колледжа */
+.college-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: calc(12px * var(--font-scale));
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+.college-link svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: transform 0.2s ease;
+}
+.college-link:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-color);
+}
+.college-link:hover svg {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
 /* Плашка с версией сборки */
 .app-version {
     text-align: center;
