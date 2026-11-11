@@ -5,7 +5,20 @@
 
 ::selection { background: var(--accent-color); color: var(--accent-text, #fff); }
 
-.app-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin: 16px 16px 8px 16px; position: relative; z-index: 100; overflow: visible; touch-action: manipulation; }
+/* ФИКС: user-select: none перенесен сюда с body, чтобы не ломать скролл страницы */
+.app-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 12px 16px; 
+    margin: 16px 16px 8px 16px; 
+    position: relative; 
+    z-index: 100; 
+    overflow: visible; 
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
 .header-left { display: flex; align-items: center; gap: 12px; }
 .header-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .logo-img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
@@ -59,8 +72,10 @@
     border-right: 1px solid var(--border-color); 
     touch-action: pan-y; 
     overscroll-behavior-x: contain;
-    /* ФИКС: изолируем layout меню от остальной страницы */
-    contain: layout;
+    /* ФИКС: user-select: none теперь только для меню, чтобы не выделялся текст при свайпе */
+    -webkit-user-select: none;
+    user-select: none;
+    /* Убрали contain: layout (мог ломать поведение при скролле) */
 }
 .offcanvas.open { transform: translateX(0); }
 

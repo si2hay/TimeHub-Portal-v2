@@ -12,14 +12,16 @@ html, body {
   margin: 0;
   padding: 0;
   overscroll-behavior: none;
-  /* Запрещаем выделение текста на всём сайте */
-  -webkit-user-select: none;
-  user-select: none;
-  /* Запрещаем горизонтальный скролл (убирает "бегунок справа") */
-  overflow-x: hidden;
+  /* ФИКС: overflow-x: clip клипает горизонтальный overflow, но НЕ создает
+     скролл-контейнер, поэтому вертикальный drag-to-scroll пальцем работает.
+     hidden - создавал BFC и ломал вертикальный скролл в WebView. */
+  overflow-x: clip;
 }
 
-/* Разрешаем выделение только там, где нужно */
+/* user-select: none теперь применяется точечно (на меню, расписании, шапке),
+   а не глобально на body. Иначе WebView блокирует drag-to-scroll. */
+
+/* Разрешаем выделение там, где нужно */
 input, textarea {
   -webkit-user-select: text;
   user-select: text;
