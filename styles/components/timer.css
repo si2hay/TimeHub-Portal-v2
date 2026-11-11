@@ -1,6 +1,6 @@
 /**
  * @file styles/components/timer.css
- * @description Стили для таймера.
+ * @description Стили для таймера (обычного и полноэкранного).
  */
 
 .timer-widget {
@@ -20,7 +20,6 @@
 .timer-widget:hover {
     background: rgba(255, 255, 255, 0.1);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    /* Убран transform: translateY(-2px); */
 }
 
 .timer-header {
@@ -66,7 +65,6 @@
     color: var(--text-main);
     line-height: 1;
     letter-spacing: 1px;
-    /* Фикс для стабильного рендеринга цифр */
     transform: translateZ(0);
 }
 
@@ -104,7 +102,121 @@
     font-size: 11px;
 }
 
-/* Фикс для Tsap-Tsarap */
 body.font-tsap .timer-status { font-size: 17px; }
 body.font-tsap .timer-subject { font-size: 22px; }
 body.font-tsap .time-value { font-size: 36px; }
+
+/* =========================================
+   ПОЛНОЭКРАННЫЙ ТАЙМЕР
+   ========================================= */
+.fullscreen-timer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 17, 21, 0.95);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    color: var(--text-main);
+}
+
+.fullscreen-timer.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.fullscreen-close {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 36px;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    padding: 10px;
+    line-height: 1;
+}
+
+.fullscreen-close:hover {
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.fs-status {
+    font-size: 28px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.fs-subject {
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--accent-color);
+    text-align: center;
+    margin-bottom: 10px;
+    padding: 0 20px;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.fs-room {
+    font-size: 24px;
+    color: #f59e0b;
+    margin-bottom: 50px;
+    font-weight: bold;
+}
+
+.fs-time-label {
+    font-size: 24px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.fs-time-value {
+    font-size: 140px;
+    font-weight: bold;
+    line-height: 1;
+    letter-spacing: 4px;
+    margin-bottom: 50px;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+    transform: translateZ(0);
+}
+
+.fs-progress-track {
+    width: 80%;
+    max-width: 800px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.fs-progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 8px;
+    transition: width 1s linear;
+    box-shadow: 0 0 20px var(--accent-color);
+}
+
+/* Адаптив для полноэкранного таймера на телефонах */
+@media (max-width: 768px) {
+    .fs-subject { font-size: 32px; }
+    .fs-time-value { font-size: 90px; }
+    .fs-room { font-size: 18px; margin-bottom: 30px; }
+    .fs-progress-track { width: 90%; height: 12px; }
+    .fullscreen-close { top: 20px; right: 20px; font-size: 28px; }
+}
