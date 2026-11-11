@@ -1,10 +1,125 @@
 /**
  * @file styles/components/card.css
- * @description Карточки расписания, виджет погоды и переключатель дней.
+ * @description Карточки расписания, скелетоны, точки пагинации и анимации.
  */
 
-.schedule-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+/* === РАСПИСАНИЕ (контейнер) === */
+.schedule-viewport {
+    position: relative;
+    margin-bottom: 15px;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+    padding: 10px 0;
+    overflow: visible;
+}
+.schedule-viewport:active {
+    cursor: grabbing;
+}
 
+.schedule-content-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    will-change: transform, opacity;
+}
+
+.schedule-slide-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.empty-schedule {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 30px 20px;
+    font-size: 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+}
+
+/* === СКЕЛЕТОН ЗАГРУЗКИ === */
+.skeleton-card {
+    pointer-events: none;
+}
+.skeleton-block {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+.skeleton-block::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+    100% { transform: translateX(100%); }
+}
+
+/* === АНИМАЦИИ ВЫЕЗДА КАРТОЧЕК === */
+.enter-from-right .schedule-card {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.enter-from-left .schedule-card {
+    animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.anim-slide-down {
+    animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* === ТОЧКИ ПАГИНАЦИИ === */
+.schedule-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    height: 12px;
+    align-items: center;
+}
+
+.schedule-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+}
+
+.schedule-dot:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.schedule-dot.active {
+    width: 20px;
+    border-radius: 6px;
+    background: var(--accent-color);
+    opacity: 0.8;
+    box-shadow: 0 0 10px rgba(0, 98, 177, 0.3);
+}
+
+/* === КАРТОЧКИ РАСПИСАНИЯ === */
 .schedule-card {
     display: flex; 
     align-items: stretch; 
@@ -12,27 +127,19 @@
     overflow: hidden; 
     min-height: 90px; 
     position: relative;
-    cursor: pointer;
-    /* Плавная анимация подсветки */
     transition: background 0.2s ease-out, box-shadow 0.2s ease-out;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     border-radius: var(--border-radius);
 }
 
 .schedule-card:hover {
-    /* Убран transform: translateY(-3px); */
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-}
-
-.schedule-card:active { 
-    transform: scale(0.98); 
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .lesson-time { 
-    background: rgba(0, 0, 0, 0.2); 
+    background: rgba(0, 0, 0, 0.15); 
     padding: 12px 8px; 
     display: flex; 
     flex-direction: column; 
@@ -43,42 +150,16 @@
     flex-shrink: 0;
 }
 
-.lesson-num { 
-    font-size: 24px; 
-    font-weight: bold; 
-    color: var(--accent-color); 
-    line-height: 1; 
-    margin-bottom: 4px; 
-}
-
-.lesson-clock { 
-    font-size: 12px; 
-    color: var(--text-muted); 
-    white-space: nowrap; 
-    line-height: 16px; /* Жесткая высота */
-    display: block; 
-}
-
-.lesson-info { 
-    padding: 12px 14px; 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: center; 
-    flex-grow: 1; 
-    min-width: 0; 
-    gap: 6px; 
-}
-
+.lesson-num { font-size: 24px; font-weight: bold; color: var(--accent-color); line-height: 1; margin-bottom: 4px; }
+.lesson-clock { font-size: 12px; color: var(--text-muted); white-space: nowrap; line-height: 16px; display: block; }
+.lesson-info { padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0; gap: 6px; }
 .lesson-subject { font-size: 16px; font-weight: bold; line-height: 1.2; word-wrap: break-word; }
 .lesson-details { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.1; }
 .lesson-room { color: #f59e0b; white-space: nowrap; }
 .lesson-teacher { opacity: 0.8; word-wrap: break-word; }
 
 /* Замены */
-.schedule-card.is-substitution { 
-    border-color: rgba(239, 68, 68, 0.6) !important; 
-    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.08), var(--glass-shadow); 
-}
+.schedule-card.is-substitution { border-color: rgba(239, 68, 68, 0.6) !important; box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.08), 0 4px 15px rgba(0,0,0,0.15); }
 .badge-substitution {
     position: absolute; top: 8px; right: 8px; background: rgba(239, 68, 68, 0.85);
     backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); color: white;
@@ -98,9 +179,3 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 .weather-content { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .clothing-advice { font-size: 12px; color: var(--text-muted); text-align: right; font-style: italic; }
 .widget-footer { padding: 0 20px 10px 20px; font-size: 11px; color: var(--text-muted); text-align: center; }
-
-/* === ПЕРЕКЛЮЧАТЕЛЬ ДНЕЙ === */
-.day-switcher { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; }
-.day-btn { flex: 1; padding: 8px 0; background: var(--glass-bg); border: 1px solid var(--border-color); color: var(--text-main); transition: all 0.2s ease; }
-.day-btn:hover { background: rgba(255,255,255,0.1); }
-.day-btn.active { background: var(--accent-color); color: var(--accent-text); border-color: var(--accent-color); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }

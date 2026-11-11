@@ -3,17 +3,17 @@
  */
 import { getDebugState } from './debug.logic.js';
 
-function getNow() {
+export function getNow() {
     const debug = getDebugState();
     if (debug.enabled) {
         const now = new Date();
         if (debug.date) {
             const [y, m, d] = debug.date.split('-');
-            now.setFullYear(y, m - 1, d);
+            now.setFullYear(parseInt(y), parseInt(m) - 1, parseInt(d));
         }
         if (debug.time) {
             const [h, min] = debug.time.split(':');
-            now.setHours(h, min, 0, 0);
+            now.setHours(parseInt(h), parseInt(min), 0, 0);
         }
         return now;
     }
@@ -54,20 +54,13 @@ export function getDateByWeekOffset(offset) {
     return (new Date(target - tzOffset)).toISOString().split('T')[0];
 }
 
-// НОВАЯ ФУНКЦИЯ: вычисляет точную дату (YYYY-MM-DD) для конкретного дня и недели
 export function getDateForDayAndWeek(dayNum, weekOffset) {
     const now = getNow();
-    // 1. Узнаем, какой сегодня день (1 = Пн, ..., 7 = Вс)
     const currentDayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
-    
-    // 2. Находим дату понедельника текущей недели
     const monday = new Date(now);
     monday.setDate(now.getDate() - (currentDayOfWeek - 1) + (weekOffset * 7));
-    
-    // 3. Прибавляем нужный день
     const target = new Date(monday);
     target.setDate(monday.getDate() + (dayNum - 1));
-    
     const tzOffset = target.getTimezoneOffset() * 60000;
     return (new Date(target - tzOffset)).toISOString().split('T')[0];
 }

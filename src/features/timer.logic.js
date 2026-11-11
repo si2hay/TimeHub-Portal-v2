@@ -1,6 +1,6 @@
 /**
  * @file src/features/timer.logic.js
- * @description Чистая логика расчета времени пар.
+ * @description Чистая логика расчета времени пар с учетом перемен.
  */
 
 function timeToMinutes(timeStr) {
@@ -23,66 +23,130 @@ export function getTimerState(now, lessons, bells) {
         return { status: 'empty', text: 'На сегодня пар нет 🎉', progress: 0 };
     }
 
+    // Обогащаем расписание временными метками
     const todaySchedule = lessons.map(lesson => {
         const bell = bells.find(b => b.pair === lesson.pair_num);
+        const hasCustom = lesson.custom_start && lesson.custom_end;
+
+        const startStr = hasCustom ? lesson.custom_start : (bell ? bell.start : null);
+        const endStr = hasCustom ? lesson.custom_end : (bell ? bell.end : null);
+        
+        if (!startStr || !endStr) return null;
+
+        const startMins = timeToMinutes(startStr);
+        const endMins = timeToMinutes(endStr);
+        
+        let breakStartMins = null;
+        let breakEndMins = null;
+        let hasBreak = false;
+
+        if (hasCustom) {
+            // Если это замена с кастомным временем, считаем её сплошной (без перемены)
+            hasBreak = false;
+        } else if (bell) {
+            breakStartMins = timeToMinutes(bell.breakStart);
+            breakEndMins = timeToMinutes(bell.breakEnd);
+            // Если есть реальная перемена (начало не совпадает с концом)
+            hasBreak = breakStartMins < breakEndMins;
+        }
+
         return {
             ...lesson,
-            startTime: lesson.custom_start || (bell ? bell.start : null),
-            endTime: lesson.custom_end || (bell ? bell.end : null)
+            startMins,
+            endMins,
+            breakStartMins,
+            breakEndMins,
+            hasBreak
         };
-    }).filter(l => l.startTime && l.endTime);
+    }).filter(l => l !== null).sort((a, b) => a.startMins - b.startMins);
 
     if (todaySchedule.length === 0) {
-         return { status: 'empty', text: 'Время пар не задано', progress: 0 };
+        return { status: 'empty', text: 'Время пар не задано', progress: 0 };
     }
 
-    const firstPairStart = timeToMinutes(todaySchedule[0].startTime);
-
-    if (currentMins < firstPairStart) {
+    const firstPair = todaySchedule[0];
+    if (currentMins < firstPair.startMins) {
         return {
             status: 'waiting',
             text: `До первой пары:`,
-            subject: todaySchedule[0].subject,
-            room: todaySchedule[0].room,
-            timeLeft: formatTimeLeft(firstPairStart - currentMins),
-            progress: 0 // Или можно считать от начала дня, но пока 0
+            subject: firstPair.subject,
+            room: firstPair.room,
+            timeLeft: formatTimeLeft(firstPair.startMins - currentMins),
+            progress: 0
         };
     }
 
     for (let i = 0; i < todaySchedule.length; i++) {
         const pair = todaySchedule[i];
-        const start = timeToMinutes(pair.startTime);
-        const end = timeToMinutes(pair.endTime);
-        const duration = end - start;
         
-        // Если мы на паре
-        if (currentMins >= start && currentMins < end) {
-            const progress = (currentMins - start) / duration; // От 0 до 1
+        // Если мы на паре (внутри её таймслота)
+        if (currentMins >= pair.startMins && currentMins < pair.endMins) {
             
-            if (duration < 90) {
-                return { status: 'lesson', text: `Идет ${pair.pair_num}-я пара:`, subject: pair.subject, room: pair.room, timeLeft: formatTimeLeft(end - currentMins), progress };
-            } else {
-                const halfEnd = start + 45;
-                if (currentMins >= start && currentMins < halfEnd) {
-                    return { status: 'lesson', text: `Идет 1-я часть ${pair.pair_num}-й пары:`, subject: pair.subject, room: pair.room, timeLeft: formatTimeLeft(halfEnd - currentMins), progress: (currentMins - start) / 45 };
-                } else {
-                    return { status: 'break', text: `Перемена:`, subject: pair.subject, room: pair.room, timeLeft: formatTimeLeft(end - currentMins), progress: (currentMins - halfEnd) / 45 };
-                }
+            // Если пара без перемены (кастомная)
+            if (!pair.hasBreak) {
+                const progress = (currentMins - pair.startMins) / (pair.endMins - pair.startMins);
+                return { 
+                    status: 'lesson', 
+                    text: `Идет ${pair.pair_num}-я пара:`, 
+                    subject: pair.subject, 
+                    room: pair.room, 
+                    timeLeft: formatTimeLeft(pair.endMins - currentMins), 
+                    progress 
+                };
+            }
+
+            // 1-я половина пары
+            if (currentMins < pair.breakStartMins) {
+                const duration = pair.breakStartMins - pair.startMins;
+                const progress = duration > 0 ? (currentMins - pair.startMins) / duration : 0;
+                return { 
+                    status: 'lesson', 
+                    text: `Идет 1-я часть ${pair.pair_num}-й пары:`, 
+                    subject: pair.subject, 
+                    room: pair.room, 
+                    timeLeft: formatTimeLeft(pair.breakStartMins - currentMins), 
+                    progress 
+                };
+            }
+            // Перемена внутри пары
+            else if (currentMins >= pair.breakStartMins && currentMins < pair.breakEndMins) {
+                const duration = pair.breakEndMins - pair.breakStartMins;
+                const progress = duration > 0 ? (currentMins - pair.breakStartMins) / duration : 1;
+                return { 
+                    status: 'break', 
+                    text: `Перемена:`, 
+                    subject: pair.subject, 
+                    room: pair.room, 
+                    timeLeft: formatTimeLeft(pair.breakEndMins - currentMins), 
+                    progress 
+                };
+            }
+            // 2-я половина пары
+            else {
+                const duration = pair.endMins - pair.breakEndMins;
+                const progress = duration > 0 ? (currentMins - pair.breakEndMins) / duration : 1;
+                return { 
+                    status: 'lesson', 
+                    text: `Идет 2-я часть ${pair.pair_num}-й пары:`, 
+                    subject: pair.subject, 
+                    room: pair.room, 
+                    timeLeft: formatTimeLeft(pair.endMins - currentMins), 
+                    progress 
+                };
             }
         }
 
-        // Если перемена перед следующей парой
-        if (currentMins >= end && i < todaySchedule.length - 1) {
+        // Если перерыв между парами
+        if (currentMins >= pair.endMins && i < todaySchedule.length - 1) {
             const nextPair = todaySchedule[i + 1];
-            const nextStart = timeToMinutes(nextPair.startTime);
-            if (currentMins < nextStart) {
+            if (currentMins < nextPair.startMins) {
                 return { 
                     status: 'waiting', 
-                    text: `Перемена перед ${nextPair.pair_num}-й парой:`, 
+                    text: `Перерыв перед ${nextPair.pair_num}-й парой:`, 
                     subject: nextPair.subject, 
                     room: nextPair.room,
-                    timeLeft: formatTimeLeft(nextStart - currentMins),
-                    progress: 1 // Полоска заполнена, т.к. пара прошла
+                    timeLeft: formatTimeLeft(nextPair.startMins - currentMins),
+                    progress: 1 
                 };
             }
         }

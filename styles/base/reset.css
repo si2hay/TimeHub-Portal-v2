@@ -1,12 +1,33 @@
 /**
  * @file styles/base/reset.css
- * @description Сброс стилей и базовые настройки.
+ * @description Сброс стилей, базовые настройки и стилизация скроллбара.
  */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-html {
+html, body {
   margin: 0;
   padding: 0;
+}
+
+/* Принудительная стилизация скроллбара для всех элементов */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-color) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+    background-color: var(--accent-color);
+    border-radius: 10px;
+}
+*::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-hover);
 }
