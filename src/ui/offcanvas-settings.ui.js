@@ -16,10 +16,12 @@ export function renderSettingsView(container, profile) {
     const defaultColors = { accent: '#0062b1', surface: 'rgba(26, 29, 36, 0.7)', text: '#e2e8f0', textMuted: '#94a3b8' };
     const colors = { ...defaultColors, ...(settings.colors || {}) };
     const gradient = settings.gradient || { enabled: false, color1: '#0f1115', color2: '#2c5364', angle: 135 };
+    const particleCount = settings.particleCount || 30;
 
     let currentSettings = JSON.parse(JSON.stringify(settings));
     if (!currentSettings.colors) currentSettings.colors = { ...defaultColors };
     if (!currentSettings.gradient) currentSettings.gradient = { ...gradient };
+    if (!currentSettings.particleCount) currentSettings.particleCount = 30;
 
     container.innerHTML = `
         <div class="settings-group glass-panel active">
@@ -47,6 +49,7 @@ export function renderSettingsView(container, profile) {
                         <input type="number" id="radius-input" class="slider-input" min="0" max="32" value="${settings.borderRadius || 12}">
                     </div>
                 </div>
+                
                 <div class="setting-row">
                     <span class="label">Частицы на фоне</span>
                     <label class="toggle-switch">
@@ -54,6 +57,15 @@ export function renderSettingsView(container, profile) {
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
+                
+                <div class="setting-row" id="particle-count-row" style="display: ${settings.particlesEnabled ? 'flex' : 'none'};">
+                    <span class="label">Кол-во частиц</span>
+                    <div class="slider-wrapper">
+                        <input type="range" id="particle-count-range" min="10" max="150" step="5" value="${particleCount}">
+                        <input type="number" id="particle-count-input" class="slider-input" min="10" max="150" step="5" value="${particleCount}">
+                    </div>
+                </div>
+
                 <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
                     <span class="label">Провайдер погоды</span>
                     <div id="weather-provider-container" style="width: 100%;"></div>
@@ -144,10 +156,20 @@ export function renderSettingsView(container, profile) {
     syncSlider('font-size-range', 'font-size-input', 'fontSize');
     syncSlider('radius-range', 'radius-input', 'borderRadius');
     syncSlider('grad-angle', 'grad-angle-input', 'angle', true);
+    
+    // Слайдер количества частиц
+    const particleCountRow = container.querySelector('#particle-count-row');
+    syncSlider('particle-count-range', 'particle-count-input', 'particleCount');
 
     // Тумблеры и цвета
     container.querySelector('#toggle-custom-colors')?.addEventListener('change', (e) => { currentSettings.useCustomColors = e.target.checked; save(); });
-    container.querySelector('#toggle-particles')?.addEventListener('change', (e) => { currentSettings.particlesEnabled = e.target.checked; save(); });
+    
+    // Тумблер частиц
+    container.querySelector('#toggle-particles')?.addEventListener('change', (e) => { 
+        currentSettings.particlesEnabled = e.target.checked; 
+        particleCountRow.style.display = e.target.checked ? 'flex' : 'none';
+        save(); 
+    });
 
     const setColorAndEnable = (colorKey, value) => {
         currentSettings.colors[colorKey] = value;
@@ -199,7 +221,7 @@ export function renderSettingsView(container, profile) {
             font: 'minecraft', fontSize: 10, borderRadius: 12,
             useCustomColors: false, colors: { ...defaultColors },
             gradient: { enabled: false, color1: '#0f1115', color2: '#2c5364', angle: 135 },
-            bgUrl: '', bgDarkness: 0, bgBlur: 0, particlesEnabled: false, theme: 'theme-glass'
+            bgUrl: '', bgDarkness: 0, bgBlur: 0, particlesEnabled: false, particleCount: 30, theme: 'theme-glass'
         };
         applyUserSettings(currentSettings);
         if (userId) await supabase.from('profiles').update({ settings: currentSettings }).eq('id', userId);

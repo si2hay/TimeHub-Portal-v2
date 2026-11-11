@@ -1,6 +1,6 @@
 /**
  * @file src/features/particles.logic.js
- * @description Оптимизированная система интерактивных частиц на Canvas.
+ * @description Оптимизированная система частиц на Canvas (без линий).
  */
 
 let canvas, ctx;
@@ -9,17 +9,12 @@ let animationId;
 let mouse = { x: null, y: null, radius: 150 };
 let isInitialized = false;
 
-// Настройки
-const PARTICLE_COUNT = 60;
-const MAX_SPEED = 0.5;
-const LINE_DIST = 120;
-
 class Particle {
     constructor(w, h) {
         this.x = Math.random() * w;
         this.y = Math.random() * h;
-        this.vx = (Math.random() - 0.5) * MAX_SPEED;
-        this.vy = (Math.random() - 0.5) * MAX_SPEED;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
         this.radius = Math.random() * 2 + 1;
     }
 
@@ -60,33 +55,33 @@ class Particle {
     }
 }
 
-function initParticles() {
-    if (isInitialized) return;
+export function initParticles(count = 30) {
+    // Если уже запущены, удаляем старые перед созданием новых
+    if (isInitialized) {
+        destroyParticles();
+    }
     
     canvas = document.createElement('canvas');
     canvas.id = 'particles-canvas';
-    // ФИКС: Подняли z-index с -2 на -1
     canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-1;pointer-events:none;';
     document.body.appendChild(canvas);
     ctx = canvas.getContext('2d');
 
     resizeCanvas();
-    particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle(canvas.width, canvas.height));
+    particles = Array.from({ length: count }, () => new Particle(canvas.width, canvas.height));
 
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mousedown', handleClick);
 
     isInitialized = true;
     animate();
 }
 
-function destroyParticles() {
+export function destroyParticles() {
     if (!isInitialized) return;
     cancelAnimationFrame(animationId);
     window.removeEventListener('resize', resizeCanvas);
     window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mousedown', handleClick);
     if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
     particles = [];
     isInitialized = false;
@@ -103,63 +98,15 @@ function handleMouseMove(e) {
     mouse.y = e.clientY;
 }
 
-function handleClick(e) {
-    particles.forEach(p => {
-        let dx = p.x - e.clientX;
-        let dy = p.y - e.clientY;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 200) {
-            p.vx += (dx / distance) * 2;
-            p.vy += (dy / distance) * 2;
-        }
-    });
-}
-
 function animate() {
     if (!canvas || !ctx) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    particles.forEach((p, index) => {
+    particles.forEach(p => {
         p.update(canvas.width, canvas.height);
         p.draw();
-
-        for (let j = index + 1; j < particles.length; j++) {
-            let p2 = particles[j];
-            let dx = p.x - p2.x;
-            let dy = p.y - p2.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < LINE_DIST) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - dist / (LINE_DIST * 5)})`;
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-            }
-        }
-
-        if (mouse.x != null && mouse.y != null) {
-            let dx = p.x - mouse.x;
-            let dy = p.y - mouse.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < mouse.radius) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(mouse.x, mouse.y);
-                ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 - dist / (mouse.radius * 3)})`;
-                ctx.stroke();
-            }
-        }
-    });
-
-    particles.forEach(p => {
-        if (p.vx > MAX_SPEED) p.vx *= 0.98;
-        if (p.vy > MAX_SPEED) p.vy *= 0.98;
     });
 
     animationId = requestAnimationFrame(animate);
 }
-
-export { initParticles, destroyParticles };

@@ -35,19 +35,16 @@ function hexToRgba(hex, alpha) {
 export function applyUserSettings(settings) {
     if (!settings) return;
 
-    // Сбрасываем только классы, которые сами и ставим — не трогаем остальное
     document.body.classList.remove('font-minecraft', 'font-tsap', 'theme-glass', 'theme-classic');
 
     if (settings.font) document.body.classList.add(`font-${settings.font}`);
 
-    // Тема (по умолчанию стеклянная)
     const currentTheme = settings.theme || 'theme-glass';
     document.body.classList.add(currentTheme);
 
     const root = document.documentElement;
     root.style.setProperty('--font-scale', (settings.fontSize || 10) / 10);
 
-    // Кастомные цвета
     if (settings.useCustomColors && settings.colors) {
         const cc = settings.colors;
         const textColor = getContrastColor(cc.surface || '#1a1d24');
@@ -89,7 +86,6 @@ export function applyUserSettings(settings) {
         root.style.setProperty('--border-radius', `${settings.borderRadius}px`);
     }
 
-    // Градиент
     if (settings.gradient && settings.gradient.enabled) {
         document.body.style.backgroundImage = `linear-gradient(${settings.gradient.angle}deg, ${settings.gradient.color1}, ${settings.gradient.color2})`;
         document.body.style.backgroundSize = '200% 200%';
@@ -99,7 +95,6 @@ export function applyUserSettings(settings) {
         document.body.style.animation = '';
     }
 
-    // Фоновая картинка/видео
     let bgEl = document.getElementById('custom-bg');
     if (settings.bgUrl) {
         document.body.style.backgroundColor = 'transparent';
@@ -121,9 +116,9 @@ export function applyUserSettings(settings) {
         if (bgEl) bgEl.remove();
     }
 
-    // Частицы
+    // ЧАСТИЦЫ (теперь с передачей количества)
     if (settings.particlesEnabled) {
-        initParticles();
+        initParticles(settings.particleCount || 30);
     } else {
         destroyParticles();
     }
