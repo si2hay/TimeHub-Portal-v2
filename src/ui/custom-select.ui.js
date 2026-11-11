@@ -53,7 +53,6 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
     };
 
     const renderOptions = (query = '') => {
-        // ИСПОЛЬЗУЕМ УМНЫЙ ПОИСК
         const filtered = smartSearch(options, query);
         
         if (filtered.length === 0) {
@@ -83,7 +82,6 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
         document.querySelectorAll('.custom-dropdown.open').forEach(d => {
             d.classList.remove('open');
             d.closest('.custom-select-wrapper')?.classList.remove('open');
-            // Сбрасываем стили у старых групп
             let parent = d.parentElement;
             while (parent) {
                 if (parent.classList.contains('settings-group') || parent.classList.contains('settings-inner') || parent.classList.contains('settings-content')) {
@@ -96,7 +94,14 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
         dropdown.classList.add('open');
         wrapper.classList.add('open');
         toggleParentStyles(true);
-        searchInput.focus();
+        
+        // ФИКС: На мобилках не открываем клавиатуру автоматически (чтобы не дёргалось)
+        // На ПК фокусим, но с preventScroll (чтобы не сдвигался контент)
+        const isMobile = window.matchMedia('(pointer: coarse)').matches;
+        if (!isMobile) {
+            searchInput.focus({ preventScroll: true });
+        }
+        
         renderOptions();
     };
 

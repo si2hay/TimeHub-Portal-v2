@@ -4,23 +4,22 @@
  */
 *, *::before, *::after {
   box-sizing: border-box;
-  
-  /* Убиваем синие квадратики при тапе в WebView */
   -webkit-tap-highlight-color: transparent !important;
-  /* Убиваем контекстное меню (типо "Копировать / Сохранить картинку") при долгом тапе */
   -webkit-touch-callout: none;
 }
 
 html, body {
   margin: 0;
   padding: 0;
-  overscroll-behavior: none; 
-  /* Запрещаем выделение текста на всём сайте, чтобы WebView не тормозил при свайпах */
+  overscroll-behavior: none;
+  /* Запрещаем выделение текста на всём сайте */
   -webkit-user-select: none;
   user-select: none;
+  /* Запрещаем горизонтальный скролл (убирает "бегунок справа") */
+  overflow-x: hidden;
 }
 
-/* Разрешаем выделение только там, где это реально нужно */
+/* Разрешаем выделение только там, где нужно */
 input, textarea {
   -webkit-user-select: text;
   user-select: text;

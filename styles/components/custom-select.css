@@ -36,7 +36,9 @@
     top: 100%; 
     left: 0; 
     width: 100%; 
-    min-width: 200px;
+    /* Убрали min-width: 200px — иначе вылезал за пределы */
+    min-width: 0;
+    max-width: 100%;
     background: rgba(20, 22, 26, 0.98) !important; 
     border: 1px solid var(--border-color);
     border-radius: 6px; 
@@ -49,8 +51,10 @@
     max-height: 250px; 
     display: flex; 
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    /* Легкая тень вместо 0 10px 30px rgba(0,0,0,0.8) */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     pointer-events: none;
+    box-sizing: border-box;
 }
 
 .custom-dropdown.open { 
@@ -72,7 +76,7 @@
     font-family: inherit; 
     box-sizing: border-box; 
     line-height: 1.1; 
-    font-size: calc(14px * var(--font-scale)); 
+    font-size: max(16px, calc(14px * var(--font-scale))); /* 16px чтобы iOS не зумил */
 }
 .dropdown-search:focus { border-color: var(--accent-color); }
 
@@ -93,3 +97,10 @@
 .custom-option.selected { background: var(--accent-color) !important; color: #fff !important; }
 
 .no-results { padding: 10px; text-align: center; color: var(--text-muted); font-size: calc(12px * var(--font-scale)); }
+
+/* На мобилках убираем тяжелую тень совсем */
+@media (max-width: 768px) {
+    .custom-dropdown {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+}
