@@ -47,6 +47,7 @@ export function createOffcanvas(profile) {
                 </button>
             </div>
             <div class="offcanvas-footer">
+                <div class="app-version">v2.0 | Сборка: ${__BUILD_DATE__}</div>
                 <button id="btn-sidebar-logout" class="btn btn-danger btn-full" style="justify-content: center;">Выйти</button>
             </div>
         </div>

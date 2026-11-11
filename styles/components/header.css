@@ -66,3 +66,14 @@
 .btn-admin:hover { background: var(--accent-hover); }
 .btn-settings { justify-content: flex-start; padding: 12px; margin-bottom: 5px; }
 .btn-full { width: 100%; }
+
+/* Плашка с версией сборки */
+.app-version {
+    text-align: center;
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-bottom: 12px;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
