@@ -25,9 +25,9 @@ async function initApp() {
     if (tg) {
         tg.ready();
         tg.expand();
-        tg.disableVerticalSwipes(); // Запрещаем свайп вниз для закрытия бота
-        tg.enableClosingConfirmation(); // Спрашиваем подтверждение при закрытии
-        tg.BackButton.hide(); // На главной странице кнопка "Назад" не нужна
+        tg.disableVerticalSwipes(); 
+        tg.enableClosingConfirmation(); 
+        tg.BackButton.hide(); 
     }
 
     const appDiv = document.getElementById('app');
@@ -201,26 +201,49 @@ async function initApp() {
     }
 
     let startX = 0;
+    let startY = 0;
     let currentX = 0;
+    let currentY = 0;
     let isDragging = false;
     const threshold = 60;
 
     const onDragStart = (e) => {
         if (isAnimating) return;
         isDragging = true;
-        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        if (e.type.includes('mouse')) {
+            startX = e.clientX;
+            startY = e.clientY;
+        } else {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
         currentX = startX;
+        currentY = startY;
     };
 
     const onDragMove = (e) => {
         if (!isDragging || isAnimating) return;
-        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const diff = currentX - startX;
         
-        const progress = Math.min(Math.abs(diff) / 150, 1);
+        if (e.type.includes('mouse')) {
+            currentX = e.clientX;
+            currentY = e.clientY;
+        } else {
+            currentX = e.touches[0].clientX;
+            currentY = e.touches[0].clientY;
+        }
+
+        const diffX = currentX - startX;
+        const diffY = currentY - startY;
+        
+        // Если жест больше по горизонтали, предотвращаем скролл сайта
+        if (Math.abs(diffX) > Math.abs(diffY) && e.cancelable) {
+            e.preventDefault();
+        }
+
+        const progress = Math.min(Math.abs(diffX) / 150, 1);
         const opacity = 1 - progress * 0.5;
         const scale = 1 - progress * 0.05;
-        const translateX = diff * 0.4;
+        const translateX = diffX * 0.4;
         
         contentEl.style.transform = `translateX(${translateX}px) scale(${scale})`;
         contentEl.style.opacity = opacity;
@@ -247,8 +270,9 @@ async function initApp() {
     window.addEventListener('mousemove', onDragMove);
     window.addEventListener('mouseup', onDragEnd);
 
+    // ВАЖНО: passive: false, чтобы можно было предотвратить скролл сайта
     viewport.addEventListener('touchstart', onDragStart, { passive: true });
-    viewport.addEventListener('touchmove', onDragMove, { passive: true });
+    viewport.addEventListener('touchmove', onDragMove, { passive: false });
     window.addEventListener('touchend', onDragEnd);
 
     async function loadWeekData(animateDown = false) {

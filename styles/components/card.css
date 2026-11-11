@@ -12,6 +12,10 @@
     cursor: grab;
     padding: 10px 0;
     overflow: visible;
+    
+    /* ФИКС ДЛЯ TELEGRAM: запрещаем сайту уезжать вбок при свайпе */
+    overscroll-behavior-x: contain;
+    touch-action: pan-y;
 }
 .schedule-viewport:active {
     cursor: grabbing;

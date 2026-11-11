@@ -58,8 +58,10 @@
     overflow: hidden; 
     margin-left: -1px; 
     border-right: 1px solid var(--border-color); 
-    /* Добавлено для корректной работы свайпа и скролла */
     touch-action: pan-y; 
+    
+    /* ФИКС ДЛЯ TELEGRAM: не даем странице уехать при свайпе */
+    overscroll-behavior-x: contain;
 }
 .offcanvas.open { transform: translateX(0); }
 
