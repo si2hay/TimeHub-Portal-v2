@@ -1,5 +1,6 @@
 /**
  * @file src/pages/app.page.js
+ * @description Главная страница приложения. ПК-версия разделена на две колонки.
  */
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
@@ -53,7 +54,6 @@ async function initApp() {
             supabase.from('profiles').update({ settings: newSettings }).eq('id', session.user.id).then();
         }
 
-        const now = getNow();
         const realDay = getCurrentDay(); 
         const realWeek = getCurrentWeek();
         const realDateStr = getTodayDateString();
@@ -65,7 +65,7 @@ async function initApp() {
         let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
         let cache = {};
 
-        // ФОРМАТ ДЛЯ ШАПКИ (ВСЕГДА 2 СТРОКИ, СВЕРХУ СЕГОДНЯ, СНИЗУ ВЫБРАН)
+        // ФОРМАТ ДЛЯ ШАПКИ
         const getHeaderDateString = () => {
             const realStr = `${getDayNameRus(realDay)}, ${formatDateRus(realDateStr)}`;
             const targetDate = getDateForDayAndWeek(selectedDay, weekOffset);
@@ -111,37 +111,45 @@ async function initApp() {
         appDiv.innerHTML = `
             <div id="header-container"></div>
             <main class="app-main">
-                
-                <div class="glass-panel dashboard-widget">
-                    <div class="widget-header">
-                        <button id="btn-prev-week" class="icon-btn">◀</button>
-                        <div class="week-label-wrapper">
-                            <span id="week-label" class="week-label">1 неделя</span>
-                        </div>
-                        <button id="btn-next-week" class="icon-btn">▶</button>
-                    </div>
+                <div class="desktop-layout">
+                    
+                    <!-- ЛЕВАЯ КОЛОНКА -->
+                    <aside class="desktop-sidebar">
+                        <div class="glass-panel dashboard-widget">
+                            <div class="widget-header">
+                                <button id="btn-prev-week" class="icon-btn">◀</button>
+                                <div class="week-label-wrapper">
+                                    <span id="week-label" class="week-label">1 неделя</span>
+                                </div>
+                                <button id="btn-next-week" class="icon-btn">▶</button>
+                            </div>
 
-                    <div class="widget-body">
-                        <div id="weather-content" class="weather-content">
-                            <span style="opacity:0.5;">Загрузка...</span>
-                        </div>
-                        <div id="clothing-advice" class="clothing-advice">
-                            Совет: ...
-                        </div>
-                    </div>
+                            <div class="widget-body">
+                                <div id="weather-content" class="weather-content">
+                                    <span style="opacity:0.5;">Загрузка...</span>
+                                </div>
+                                <div id="clothing-advice" class="clothing-advice">
+                                    Совет: ...
+                                </div>
+                            </div>
 
-                    <div class="widget-footer">
-                        Сейчас идет: <strong>${realWeek} неделя</strong>
-                    </div>
+                            <div class="widget-footer">
+                                Сейчас идет: <strong>${realWeek} неделя</strong>
+                            </div>
+                        </div>
+
+                        <div id="timer-container"></div>
+                    </aside>
+
+                    <!-- ПРАВАЯ КОЛОНКА -->
+                    <section class="desktop-content">
+                        <div class="schedule-viewport" id="schedule-viewport">
+                            <div class="schedule-content-wrap" id="schedule-content"></div>
+                        </div>
+                        <div class="schedule-dots" id="schedule-dots"></div>
+                    </section>
+                    
                 </div>
-
-                <div id="timer-container"></div>
-
-                <div class="schedule-viewport" id="schedule-viewport">
-                    <div class="schedule-content-wrap" id="schedule-content"></div>
-                </div>
-
-                <div class="schedule-dots" id="schedule-dots"></div>
 
                 <footer class="app-footer">
                     <div class="footer-content">
@@ -393,7 +401,7 @@ async function initApp() {
                 return;
             }
 
-            // Ищем ближайший день с парами (с учетом выходных)
+            // Ищем ближайший день с парами
             let searchDay = selectedDay;
             let searchWeekOffset = weekOffset;
             let daysAdded = 0;
@@ -410,7 +418,6 @@ async function initApp() {
                 const w = getWeekByOffset(searchWeekOffset);
                 const lessons = cache[w]?.[searchDay] || [];
                 
-                // Пропускаем сегодня, если мы ищем в будущем
                 if (i === 0 && diffDays === 0 && lessons.length === 0) continue;
 
                 if (lessons.length > 0) {

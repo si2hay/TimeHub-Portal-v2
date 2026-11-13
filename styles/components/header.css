@@ -10,13 +10,25 @@
     justify-content: space-between; 
     align-items: center; 
     padding: 12px 16px; 
-    margin: 16px 16px 8px 16px; 
+    margin: 16px auto 8px auto; 
+    max-width: 600px; /* Мобильная ширина */
+    width: calc(100% - 32px);
     position: relative; 
     z-index: 100; 
     overflow: visible; 
     touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
+    flex-shrink: 0; 
+}
+
+/* ФИКС ШАПКИ ДЛЯ ПК */
+@media (min-width: 900px) {
+    .app-header {
+        max-width: 1400px; /* Отменяем 600px для ПК */
+        width: calc(100% - 40px);
+        margin: 20px auto 10px auto;
+    }
 }
 
 .header-left { display: flex; align-items: center; gap: 12px; }
@@ -57,16 +69,16 @@
     animation: streakPulse 1s ease-out 2;
 }
 
-/* Поповер стрика (АДАПТИВНЫЙ) */
+/* Поповер стрика */
 .streak-popover {
     position: absolute;
     top: calc(100% + 10px);
     left: 0;
     width: 220px;
-    /* ИСПОЛЬЗУЕМ ПЕРЕМЕННЫЕ ТЕМЫ */
-    background: var(--surface-color);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: var(--bg-color);
+    opacity: 0.95;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 15px;
@@ -80,8 +92,16 @@
     pointer-events: none;
 }
 
+body.theme-glass .streak-popover {
+    background: rgba(15, 17, 21, 0.85);
+}
+body.theme-glass .streak-popover-text,
+body.theme-glass .streak-popover-count {
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
 .streak-popover.active {
-    opacity: 1;
+    opacity: 0.95;
     visibility: visible;
     transform: translateY(0) scale(1);
     pointer-events: auto;
@@ -108,7 +128,7 @@
 .streak-popover-count {
     font-size: 24px;
     font-weight: bold;
-    color: var(--accent-color); /* Берет цвет из темы */
+    color: var(--accent-color);
     margin-bottom: 5px;
 }
 

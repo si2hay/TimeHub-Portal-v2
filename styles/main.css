@@ -20,5 +20,3 @@
 @import './components/modal.css';
 @import './components/button.css';
 @import './components/auth.css';
-
-.app-main { padding: 0 16px 30px 16px; max-width: 600px; margin: 0 auto; width: 100%; }

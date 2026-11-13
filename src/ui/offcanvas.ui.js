@@ -216,7 +216,7 @@ export function createOffcanvas(profile) {
         showModal('Калькулятор оценок', `
             <div class="calc-container">
                 <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Введи свои оценки (например: 5, 4, 3 или 55543)</p>
-                <input type="text" id="calc-input" class="admin-input" placeholder="5, 4, 3, 5...">
+                <input type="text" inputmode="numeric" pattern="[0-9, ]*" id="calc-input" class="admin-input" placeholder="5, 4, 3, 5...">
                 <div class="calc-result" id="calc-result">Средний балл: -</div>
             </div>
         `);

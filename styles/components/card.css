@@ -154,7 +154,15 @@
 
 .lesson-num { font-size: 24px; font-weight: bold; color: var(--accent-color); line-height: 1; margin-bottom: 4px; }
 .lesson-clock { font-size: 12px; color: var(--text-muted); white-space: nowrap; line-height: 16px; display: block; }
-.lesson-info { padding: 12px 14px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; min-width: 0; gap: 6px; }
+.lesson-info { 
+    padding: 12px 14px; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    flex-grow: 1; 
+    min-width: 0; /* КРИТИЧЕСКИ ВАЖНО: не дает тексту сжаться в полоску */
+    gap: 6px; 
+}
 .lesson-subject { font-size: 16px; font-weight: bold; line-height: 1.2; word-wrap: break-word; }
 .lesson-details { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.1; }
 .lesson-room { color: #f59e0b; white-space: nowrap; }

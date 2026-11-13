@@ -1,17 +1,15 @@
 /**
  * @file styles/layout/app-grid.css
- * @description Сетка основного приложения и флекс-верстка для прижатия подвала.
+ * @description Сетка основного приложения. Левая колонка sticky, правая занимает всё место.
  */
 
-html, body {
-    height: 100%;
-}
+/* Убрали жесткие правила для html, body, чтобы не ломать мобильный скролл (reset.css сделает всё сам) */
 
 #app {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Фоллбэк */
-    min-height: 100dvh; /* Точная высота с учетом панелей браузера */
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .app-main {
@@ -19,17 +17,64 @@ html, body {
     flex-direction: column;
     flex-grow: 1; 
     padding: 0 16px 30px 16px;
-    max-width: 600px;
+    max-width: 600px; /* Мобильная ширина */
     margin: 0 auto;
     width: 100%;
 }
 
 .app-footer {
-    margin-top: auto; /* ПРИЖИМАЕТ ПОДВАЛ К НИЗУ */
+    margin-top: auto;
+    flex-shrink: 0;
 }
 
-.app-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+/* =========================================
+   ПК-АДАПТИВ (ДВЕ КОЛОНКИ)
+   ========================================= */
+@media (min-width: 900px) {
+    .app-main {
+        max-width: 1400px; /* Отменяем 600px для ПК */
+        padding: 0 20px;
+    }
+
+    .desktop-layout {
+        display: flex;
+        flex-direction: row;
+        gap: 30px;
+        width: 100%;
+        margin-top: 10px;
+        align-items: flex-start;
+    }
+
+    .desktop-sidebar {
+        flex: 0 0 380px; /* Фиксированная ширина левой колонки */
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: sticky; /* Прилипает при скролле */
+        top: 20px;
+        height: fit-content;
+    }
+
+    .desktop-content {
+        flex: 1; /* Занимает всё оставшееся место */
+        min-width: 0; /* КРИТИЧЕСКИ ВАЖНО: не дает карточкам сжаться */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .schedule-viewport {
+        margin-bottom: 0;
+        padding-top: 0;
+    }
+    
+    .dashboard-widget {
+        margin-bottom: 0;
+    }
+
+    .app-footer {
+        margin-top: 40px;
+        padding: 15px 0;
+        border-top: 1px solid var(--border-color);
+        width: 100%;
+    }
 }
