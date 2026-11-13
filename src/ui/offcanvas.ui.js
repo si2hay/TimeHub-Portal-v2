@@ -139,9 +139,7 @@ export function createOffcanvas(profile) {
             <button class="calc-btn" data-val="2">2</button>
             <button class="calc-btn" data-val="1">1</button>
             <button class="calc-btn calc-btn-action" id="calc-back">⌫</button>
-            <!-- Кнопка "Пять двоек" для математички -->
             <button class="calc-btn calc-btn-bad" data-val="22222">22222</button>
-            <!-- Сброс на 2 колонки -->
             <button class="calc-btn calc-btn-action calc-btn-wide" id="calc-clear" style="grid-column: span 2;">Сброс</button>
         </div>
     `;
@@ -194,7 +192,6 @@ export function createOffcanvas(profile) {
             if (group.id === 'ref-group-consults' && !isActive) {
                 const container = group.querySelector('#consults-container');
                 if (container.innerHTML.includes('Открой, чтобы загрузить')) {
-                    // СКЕЛЕТОНЫ ДЛЯ КОНСУЛЬТАЦИЙ
                     container.innerHTML = `
                         <div class="consult-skeleton-list">
                             ${[1, 2].map(() => `
@@ -281,12 +278,12 @@ export function createOffcanvas(profile) {
         history.pushState({ settingsOpen: true }, '');
     });
 
+    // ИСПРАВЛЕНО: Просто вызываем history.back(), а popstate сам разберется
     offcanvas.querySelector('#btn-back-to-main').addEventListener('click', () => {
-        viewSettings.classList.remove('active');
-        if (history.state?.settingsOpen) history.back();
+        history.back();
     });
 
-    // --- МОДАЛЬНЫЕ ОКНА (Осталось только для полного расписания) ---
+    // --- МОДАЛЬНЫЕ ОКНА ---
     const showModal = (title, contentHTML) => {
         let modal = document.getElementById('global-modal');
         if (!modal) {
@@ -340,7 +337,6 @@ export function createOffcanvas(profile) {
 
     const onDragStart = (e) => {
         if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
-        // ФИКС: Если тянем ползунок или инпут, отключаем свайп меню
         if (e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea')) return;
         
         isSwiping = true;
