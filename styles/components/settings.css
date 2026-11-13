@@ -8,14 +8,16 @@
     border: 1px solid var(--border-color); 
     border-radius: var(--border-radius); 
     overflow: hidden; 
-    background: var(--glass-bg); 
-    backdrop-filter: blur(10px);
+    /* Делаем фон аккордеонов чуть светлее, чтобы они выделялись на темном меню */
+    background: rgba(255, 255, 255, 0.08); 
+    backdrop-filter: blur(15px);
     position: relative;
 }
 .settings-header { display: flex; justify-content: space-between; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.1; touch-action: manipulation; }
 .settings-header .arrow { transition: transform 0.3s; color: var(--accent-color); }
 .settings-group.active .settings-header .arrow { transform: rotate(180deg); }
-.settings-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s; }
+/* Плавная анимация аккордеона */
+.settings-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .settings-group.active .settings-content { grid-template-rows: 1fr; }
 .settings-inner { overflow: hidden; padding: 0 16px; }
 .settings-group.active .settings-inner { padding: 16px; border-top: 1px solid var(--border-color); }
@@ -52,7 +54,7 @@
 .setting-row input[type="time"], 
 .setting-row input[type="date"],
 .setting-row .admin-select {
-    background: var(--glass-bg) !important; 
+    background: rgba(0, 0, 0, 0.2) !important; 
     border: 1px solid var(--border-color);
     color: var(--text-main) !important; 
     padding: 8px; border-radius: 6px; font-family: inherit; outline: none; line-height: 1.1;
@@ -93,14 +95,12 @@
 input[type="range"] { 
     -webkit-appearance: none; 
     appearance: none;
-    /* Большая хит-зона для пальца */
     height: 24px; 
     width: 100%;
     min-width: 80px;
     max-width: 140px;
     background: transparent; 
     outline: none; 
-    /* Запрещаем браузеру скроллить страницу при перетаскивании */
     touch-action: none;
     cursor: pointer;
 }
@@ -125,9 +125,8 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%; 
     background: var(--accent-color); 
     cursor: pointer; 
-    /* Центрируем бегунок по вертикали (6 - 20) / 2 = -7 */
     margin-top: -7px; 
-    box-shadow: none; /* Убрали тяжелую тень */
+    box-shadow: none; 
 }
 input[type="range"]::-moz-range-thumb { 
     width: 20px; 
@@ -143,7 +142,7 @@ input[type="range"]::-moz-range-thumb {
 .slider-input {
     width: 45px; min-width: 45px; max-width: 45px; 
     flex-shrink: 0; padding: 4px; text-align: center; box-sizing: border-box;
-    background: var(--glass-bg); border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color);
     border-radius: 4px; color: var(--accent-color); font-weight: bold;
     font-family: inherit; font-size: calc(14px * var(--font-scale));
     outline: none; -moz-appearance: textfield;
@@ -162,9 +161,7 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
 /* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ === */
 @media (max-width: 768px) {
     .settings-group {
-        /* Убираем backdrop-filter с каждой группы настроек */
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background: rgba(20, 22, 26, 0.6);
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
     }
 }

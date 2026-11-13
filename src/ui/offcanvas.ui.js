@@ -194,7 +194,20 @@ export function createOffcanvas(profile) {
             if (group.id === 'ref-group-consults' && !isActive) {
                 const container = group.querySelector('#consults-container');
                 if (container.innerHTML.includes('Открой, чтобы загрузить')) {
-                    container.innerHTML = '<div class="admin-placeholder">Загрузка...</div>';
+                    // СКЕЛЕТОНЫ ДЛЯ КОНСУЛЬТАЦИЙ
+                    container.innerHTML = `
+                        <div class="consult-skeleton-list">
+                            ${[1, 2].map(() => `
+                                <div class="consult-card" style="border-color: transparent;">
+                                    <div class="skeleton-block" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                                    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                                        <div class="skeleton-block" style="width: 60%; height: 16px;"></div>
+                                        <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
                     const consults = await getConsultations();
                     
                     if (consults.length === 0) {
@@ -327,6 +340,9 @@ export function createOffcanvas(profile) {
 
     const onDragStart = (e) => {
         if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
+        // ФИКС: Если тянем ползунок или инпут, отключаем свайп меню
+        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea')) return;
+        
         isSwiping = true;
         startTime = Date.now();
         startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;

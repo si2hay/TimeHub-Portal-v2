@@ -36,11 +36,10 @@ export function getCurrentDay() {
     const debug = getDebugState();
     if (debug.enabled && debug.date) {
         const d = new Date(debug.date).getDay();
-        return (d === 0 || d === 6) ? 1 : d;
+        return d === 0 ? 7 : d; // 0 (вс) -> 7
     }
     const day = getNow().getDay();
-    if (day === 0 || day === 6) return 1;
-    return day;
+    return day === 0 ? 7 : day; // Теперь возвращает реальный день 1-7
 }
 
 export function getTodayDateString() {

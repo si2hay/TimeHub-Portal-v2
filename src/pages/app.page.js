@@ -54,12 +54,13 @@ async function initApp() {
             supabase.from('profiles').update({ settings: newSettings }).eq('id', session.user.id).then();
         }
 
-        const realDay = getCurrentDay(); 
+        const realDay = getCurrentDay(); // 1-7
         const realWeek = getCurrentWeek();
         const realDateStr = getTodayDateString();
 
         let weekOffset = 0; 
-        let selectedDay = realDay; 
+        // Если сегодня выходной (6 или 7), показываем расписание на понедельник (1)
+        let selectedDay = realDay > 5 ? 1 : realDay; 
         
         let currentLessons = [];
         let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
@@ -500,6 +501,15 @@ async function initApp() {
         if (!document.getElementById('timer-widget')) {
             document.getElementById('timer-container').appendChild(renderTimer(getDayShortRus(selectedDay)));
         }
+
+        // ФИКС: Кнопка "Сегодня" в таймере
+        document.getElementById('btn-today')?.addEventListener('click', (e) => {
+            e.stopPropagation(); // Чтобы не открылся фуллскрин таймера
+            weekOffset = 0;
+            selectedDay = realDay > 5 ? 1 : realDay;
+            updateHeaderAndCalendar();
+            loadWeekData(true);
+        });
 
         await loadWeather();
     };

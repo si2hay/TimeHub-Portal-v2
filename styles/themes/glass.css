@@ -10,6 +10,9 @@ body.theme-glass {
     --glass-border: rgba(255, 255, 255, 0.3);
     --glass-blur: blur(40px);
     --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* ИДЕАЛЬНЫЙ ФОН ДЛЯ МЕНЮ: Легкая тонировка + сильный блюр в CSS */
+    --menu-bg: rgba(20, 22, 26, 0.4); 
 }
 
 body.theme-glass .glass-panel {
@@ -18,5 +21,4 @@ body.theme-glass .glass-panel {
 body.theme-glass .glass-panel:hover {
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    /* Убран transform: translateY(-2px); */
 }

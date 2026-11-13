@@ -60,7 +60,7 @@ export function applyUserSettings(settings) {
             root.style.setProperty('--surface-color', cc.surface);
             root.style.setProperty('--text-main', cc.text || textColor);
             root.style.setProperty('--text-muted', cc.textMuted || (textColor === '#000000' ? '#333333' : '#aaaaaa'));
-
+            
             if (cc.surface.includes('rgba')) {
                 root.style.setProperty('--glass-bg', cc.surface);
             } else {
@@ -116,7 +116,6 @@ export function applyUserSettings(settings) {
         if (bgEl) bgEl.remove();
     }
 
-    // ЧАСТИЦЫ (теперь с передачей количества)
     if (settings.particlesEnabled) {
         initParticles(settings.particleCount || 30);
     } else {

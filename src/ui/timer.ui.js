@@ -22,7 +22,10 @@ export function renderTimer(dayShort = '') {
         </div>
         <div class="timer-footer">
             <span>Нажми, чтобы раскрыть</span>
-            <div class="timer-btn-hint">${dayShort}</div>
+            <div class="timer-footer-right">
+                <button class="btn-today-hint" id="btn-today">Сегодня</button>
+                <div class="timer-btn-hint">${dayShort}</div>
+            </div>
         </div>
     `;
 
@@ -52,8 +55,9 @@ export function renderTimer(dayShort = '') {
         });
     }
 
-    // Открытие по клику на виджет
-    timerDiv.addEventListener('click', () => {
+    // Открытие по клику на виджет (но не по кнопке "Сегодня")
+    timerDiv.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-today')) return;
         fullscreen.classList.add('active');
     });
 

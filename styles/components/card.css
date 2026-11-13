@@ -34,6 +34,10 @@
 }
 
 .empty-schedule {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: var(--text-muted);
     padding: 30px 20px;
@@ -160,7 +164,7 @@
     flex-direction: column; 
     justify-content: center; 
     flex-grow: 1; 
-    min-width: 0; /* КРИТИЧЕСКИ ВАЖНО: не дает тексту сжаться в полоску */
+    min-width: 0; 
     gap: 6px; 
 }
 .lesson-subject { font-size: 16px; font-weight: bold; line-height: 1.2; word-wrap: break-word; }
@@ -192,7 +196,7 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 
 /* === ПОДВАЛ САЙТА === */
 .app-footer {
-    margin-top: auto; /* ПРИЖИМАЕТ К НИЗУ */
+    margin-top: auto;
     padding: 20px 0 30px 0;
     border-top: 1px solid var(--border-color);
     text-align: center;
