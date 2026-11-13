@@ -1,6 +1,6 @@
 /**
  * @file src/ui/offcanvas.ui.js
- * @description Off-canvas меню профиля с кнопкой полного расписания.
+ * @description Off-canvas меню с аккордеонами для справочника и кастомным калькулятором.
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
@@ -46,26 +46,43 @@ export function createOffcanvas(profile) {
                     <a href="${base}pages/admin.html" class="btn btn-primary btn-full btn-admin">Перейти в Админ-панель</a>
                 ` : ''}
                 
-                <!-- КНОПКА ПОЛНОГО РАСПИСАНИЯ (ТЕПЕРЬ В ТЕМЕ) -->
                 <button class="btn btn-primary btn-full" id="btn-full-schedule" style="margin-bottom: 15px;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                     Расписание на 2 недели
                 </button>
 
+                <!-- СПРАВОЧНИК (АККОРДЕОН) -->
                 <div class="sidebar-section-title">СПРАВОЧНИК</div>
-                <div class="reference-grid">
-                    <button class="btn btn-ghost btn-full" id="btn-ref-calc">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16.01" y2="14"></line><line x1="12" y1="14" x2="12.01" y2="14"></line><line x1="8" y1="14" x2="8.01" y2="14"></line><line x1="16" y1="18" x2="16.01" y2="18"></line><line x1="12" y1="18" x2="12.01" y2="18"></line><line x1="8" y1="18" x2="8.01" y2="18"></line><line x1="8" y1="10" x2="16" y2="10"></line></svg>
-                        Калькулятор
-                    </button>
-                    <button class="btn btn-ghost btn-full" id="btn-ref-libs">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                        Библиотеки
-                    </button>
-                    <button class="btn btn-ghost btn-full" id="btn-ref-consults">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                        Консультации
-                    </button>
+                <div class="settings-group glass-panel" id="ref-group-calc">
+                    <div class="settings-header"><span>Калькулятор оценок</span><span class="arrow">▼</span></div>
+                    <div class="settings-content"><div class="settings-inner" id="calc-container"></div></div>
+                </div>
+
+                <div class="settings-group glass-panel" id="ref-group-libs">
+                    <div class="settings-header"><span>Электронные библиотеки</span><span class="arrow">▼</span></div>
+                    <div class="settings-content"><div class="settings-inner">
+                        <a href="https://e.lanbook.com/" target="_blank" class="lib-card">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                            <div>
+                                <h4>ЭБС Лань</h4>
+                                <p>Учебники и пособия</p>
+                            </div>
+                        </a>
+                        <a href="https://academia-moscow.ru/" target="_blank" class="lib-card">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                            <div>
+                                <h4>Академия-Москва</h4>
+                                <p>Издательский центр</p>
+                            </div>
+                        </a>
+                    </div></div>
+                </div>
+
+                <div class="settings-group glass-panel" id="ref-group-consults">
+                    <div class="settings-header"><span>Расписание консультаций</span><span class="arrow">▼</span></div>
+                    <div class="settings-content"><div class="settings-inner" id="consults-container">
+                        <div class="admin-placeholder">Открой, чтобы загрузить...</div>
+                    </div></div>
                 </div>
 
                 <div class="sidebar-section-title" style="margin-top: 20px;">КАСТОМИЗАЦИЯ</div>
@@ -110,6 +127,106 @@ export function createOffcanvas(profile) {
     const btnLogout = offcanvas.querySelector('#btn-sidebar-logout');
     const originalText = 'Выйти';
 
+    // --- ИНИЦИАЛИЗАЦИЯ КАЛЬКУЛЯТОРА ---
+    const calcContainer = offcanvas.querySelector('#calc-container');
+    calcContainer.innerHTML = `
+        <div class="calc-display" id="calc-display"><span class="calc-placeholder">Введи оценки</span></div>
+        <div class="calc-result" id="calc-result">Средний балл: -</div>
+        <div class="calc-keyboard">
+            <button class="calc-btn" data-val="5">5</button>
+            <button class="calc-btn" data-val="4">4</button>
+            <button class="calc-btn" data-val="3">3</button>
+            <button class="calc-btn" data-val="2">2</button>
+            <button class="calc-btn" data-val="1">1</button>
+            <button class="calc-btn calc-btn-action" id="calc-back">⌫</button>
+            <!-- Кнопка "Пять двоек" для математички -->
+            <button class="calc-btn calc-btn-bad" data-val="22222">22222</button>
+            <!-- Сброс на 2 колонки -->
+            <button class="calc-btn calc-btn-action calc-btn-wide" id="calc-clear" style="grid-column: span 2;">Сброс</button>
+        </div>
+    `;
+
+    let calcValue = '';
+    const display = calcContainer.querySelector('#calc-display');
+    const result = calcContainer.querySelector('#calc-result');
+
+    const updateCalc = () => {
+        if (calcValue) {
+            display.innerHTML = `<span class="calc-numbers">${calcValue}</span>`;
+            display.classList.remove('empty');
+        } else {
+            display.innerHTML = `<span class="calc-placeholder">Введи оценки</span>`;
+            display.classList.add('empty');
+        }
+
+        display.classList.remove('pop');
+        void display.offsetWidth;
+        display.classList.add('pop');
+        
+        const matches = calcValue.match(/[1-5]/g);
+        if (!matches || matches.length === 0) { 
+            result.textContent = 'Средний балл: -'; 
+            result.classList.remove('has-value');
+            return; 
+        }
+        
+        const grades = matches.map(Number);
+        const avg = grades.reduce((a, b) => a + b, 0) / grades.length;
+        result.textContent = `Средний балл: ${avg.toFixed(2)}`;
+        result.classList.add('has-value');
+    };
+
+    calcContainer.querySelectorAll('.calc-btn[data-val]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (calcValue.length < 40) { calcValue += btn.dataset.val; updateCalc(); }
+        });
+    });
+    calcContainer.querySelector('#calc-back').addEventListener('click', () => { calcValue = calcValue.slice(0, -1); updateCalc(); });
+    calcContainer.querySelector('#calc-clear').addEventListener('click', () => { calcValue = ''; updateCalc(); });
+
+    // --- АККОРДЕОНЫ В ГЛАВНОМ МЕНЮ ---
+    const refGroups = offcanvas.querySelectorAll('.settings-group');
+    refGroups.forEach(group => {
+        const header = group.querySelector('.settings-header');
+        header.addEventListener('click', async () => {
+            const isActive = group.classList.contains('active');
+            
+            if (group.id === 'ref-group-consults' && !isActive) {
+                const container = group.querySelector('#consults-container');
+                if (container.innerHTML.includes('Открой, чтобы загрузить')) {
+                    container.innerHTML = '<div class="admin-placeholder">Загрузка...</div>';
+                    const consults = await getConsultations();
+                    
+                    if (consults.length === 0) {
+                        container.innerHTML = '<div class="admin-placeholder">Пока нет консультаций</div>';
+                    } else {
+                        const days = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
+                        let html = '<div class="consults-list">';
+                        consults.forEach(c => {
+                            html += `
+                                <div class="consult-card">
+                                    <div class="consult-day">${days[c.day_num]}</div>
+                                    <div class="consult-info">
+                                        <div class="consult-subject">${c.subject}</div>
+                                        <div class="consult-details">
+                                            <span>⏰ ${c.time_start} - ${c.time_end}</span>
+                                            ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += '</div>';
+                        container.innerHTML = html;
+                    }
+                }
+            }
+
+            refGroups.forEach(g => { if (g !== group) g.classList.remove('active'); });
+            group.classList.toggle('active');
+        });
+    });
+
     // --- ЛОГИКА НАВИГАЦИИ ---
     const closeVisuals = () => {
         offcanvas.classList.remove('open');
@@ -132,15 +249,18 @@ export function createOffcanvas(profile) {
     };
 
     const close = () => {
-        if (history.state?.menuOpen) {
-            history.back();
-        } else {
-            closeVisuals();
-        }
+        if (history.state?.menuOpen) history.back();
+        else closeVisuals();
     };
 
     window.addEventListener('popstate', () => {
-        if (offcanvas.classList.contains('open')) closeVisuals();
+        if (offcanvas.classList.contains('open')) {
+            if (viewSettings.classList.contains('active')) {
+                viewSettings.classList.remove('active');
+            } else {
+                closeVisuals();
+            }
+        }
     });
 
     offcanvas.querySelector('#btn-open-settings').addEventListener('click', () => {
@@ -153,7 +273,7 @@ export function createOffcanvas(profile) {
         if (history.state?.settingsOpen) history.back();
     });
 
-    // --- МОДАЛЬНЫЕ ОКНА ---
+    // --- МОДАЛЬНЫЕ ОКНА (Осталось только для полного расписания) ---
     const showModal = (title, contentHTML) => {
         let modal = document.getElementById('global-modal');
         if (!modal) {
@@ -163,9 +283,7 @@ export function createOffcanvas(profile) {
             document.body.appendChild(modal);
             
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.classList.remove('active');
-                }
+                if (e.target === modal) modal.classList.remove('active');
             });
         }
         modal.innerHTML = `
@@ -180,30 +298,23 @@ export function createOffcanvas(profile) {
         modal.classList.add('active');
     };
 
-    // --- ЛОГИКА ПОЛНОГО РАСПИСАНИЯ ---
     offcanvas.querySelector('#btn-full-schedule').addEventListener('click', async () => {
         showModal('Расписание на 2 недели', '<div style="text-align:center; padding:20px;">Загрузка всех дней...</div>');
-        
         try {
             const weeksData = [];
             for (let w = 0; w < 2; w++) {
                 const weekNum = getWeekByOffset(w);
                 const days = [];
-                
                 for (let d = 1; d <= 5; d++) {
                     const targetDate = getDateForDayAndWeek(d, w);
                     const [lessons, subs] = await Promise.all([
                         getScheduleForDay(userGroup, weekNum, d),
                         getSubstitutions(targetDate, userGroup)
                     ]);
-                    days.push({ 
-                        dayNum: d, 
-                        lessons: applySubstitutions(lessons, subs) 
-                    });
+                    days.push({ dayNum: d, lessons: applySubstitutions(lessons, subs) });
                 }
                 weeksData.push({ weekNum, days });
             }
-
             document.querySelector('#global-modal .modal-body').innerHTML = '';
             document.querySelector('#global-modal .modal-body').appendChild(renderFullSchedule(userGroup, weeksData));
         } catch (err) {
@@ -211,99 +322,15 @@ export function createOffcanvas(profile) {
         }
     });
 
-    // 1. Калькулятор
-    offcanvas.querySelector('#btn-ref-calc').addEventListener('click', () => {
-        showModal('Калькулятор оценок', `
-            <div class="calc-container">
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">Введи свои оценки (например: 5, 4, 3 или 55543)</p>
-                <input type="text" inputmode="numeric" pattern="[0-9, ]*" id="calc-input" class="admin-input" placeholder="5, 4, 3, 5...">
-                <div class="calc-result" id="calc-result">Средний балл: -</div>
-            </div>
-        `);
-        const input = document.getElementById('calc-input');
-        const result = document.getElementById('calc-result');
-        
-        input.addEventListener('input', () => {
-            const matches = input.value.match(/[1-5]/g);
-            
-            if (!matches || matches.length === 0) { 
-                result.textContent = 'Средний балл: -'; 
-                return; 
-            }
-            
-            const grades = matches.map(Number);
-            const avg = grades.reduce((a, b) => a + b, 0) / grades.length;
-            result.textContent = `Средний балл: ${avg.toFixed(2)}`;
-        });
-        input.focus();
-    });
-
-    // 2. Библиотеки
-    offcanvas.querySelector('#btn-ref-libs').addEventListener('click', () => {
-        showModal('Электронные библиотеки', `
-            <div class="libs-list">
-                <a href="https://e.lanbook.com/" target="_blank" class="lib-card">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <div>
-                        <h4>ЭБС Лань</h4>
-                        <p>Учебники и пособия для студентов</p>
-                    </div>
-                </a>
-                <a href="https://academia-moscow.ru/" target="_blank" class="lib-card">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <div>
-                        <h4>Академия-Москва</h4>
-                        <p>Издательский центр «Академия»</p>
-                    </div>
-                </a>
-            </div>
-        `);
-    });
-
-    // 3. Консультации
-    offcanvas.querySelector('#btn-ref-consults').addEventListener('click', async () => {
-        showModal('Расписание консультаций', '<div style="text-align:center; padding:20px;">Загрузка...</div>');
-        const consults = await getConsultations();
-        
-        if (consults.length === 0) {
-            document.querySelector('#global-modal .modal-body').innerHTML = '<div class="admin-placeholder">Пока нет назначенных консультаций</div>';
-            return;
-        }
-
-        const days = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
-        let html = '<div class="consults-list">';
-        consults.forEach(c => {
-            html += `
-                <div class="consult-card">
-                    <div class="consult-day">${days[c.day_num]}</div>
-                    <div class="consult-info">
-                        <div class="consult-subject">${c.subject}</div>
-                        <div class="consult-details">
-                            <span>⏰ ${c.time_start} - ${c.time_end}</span>
-                            ${c.room ? `<span>📍 ${c.room}</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div>';
-        document.querySelector('#global-modal .modal-body').innerHTML = html;
-    });
-
     // --- ЛОГИКА СВАЙПА ---
-    let startX = 0;
-    let currentX = 0;
-    let startTime = 0;
-    let isSwiping = false;
+    let startX = 0, currentX = 0, startTime = 0, isSwiping = false;
 
     const onDragStart = (e) => {
         if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
         isSwiping = true;
         startTime = Date.now();
-        
         startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
         currentX = startX;
-        
         offcanvas.style.transition = 'none';
         overlay.style.transition = 'none';
         offcanvas.style.userSelect = 'none';
@@ -313,11 +340,9 @@ export function createOffcanvas(profile) {
         if (!isSwiping) return;
         currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
         const diff = currentX - startX;
-
         if (diff < 0) {
             offcanvas.style.transform = `translateX(${diff}px)`;
-            const maxWidth = offcanvas.offsetWidth;
-            const opacity = 1 - (Math.abs(diff) / maxWidth);
+            const opacity = 1 - (Math.abs(diff) / offcanvas.offsetWidth);
             overlay.style.opacity = Math.max(0, opacity);
         }
     };
@@ -325,18 +350,12 @@ export function createOffcanvas(profile) {
     const onDragEnd = () => {
         if (!isSwiping) return;
         isSwiping = false;
-        
         const diff = currentX - startX;
         const time = Date.now() - startTime;
-
         offcanvas.style.transition = ''; 
         overlay.style.transition = '';
         offcanvas.style.userSelect = '';
-
-        const isFastFlick = time < 250 && diff < -30;
-        const isFarEnough = diff < -(offcanvas.offsetWidth * 0.15);
-
-        if (isFastFlick || isFarEnough) {
+        if ((time < 250 && diff < -30) || diff < -(offcanvas.offsetWidth * 0.15)) {
             close(); 
         } else {
             offcanvas.style.transform = '';
@@ -347,7 +366,6 @@ export function createOffcanvas(profile) {
     offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
     offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
     offcanvas.addEventListener('touchend', onDragEnd);
-
     offcanvas.addEventListener('mousedown', onDragStart);
     window.addEventListener('mousemove', onDragMove);
     window.addEventListener('mouseup', onDragEnd);
