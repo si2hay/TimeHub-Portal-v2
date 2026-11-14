@@ -145,13 +145,23 @@ export function renderSettingsView(container, profile) {
         btn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
-    // 1. Шрифт (ТЕПЕРЬ TINY5 DUO)
+    // 1. Шрифт (Обновленный список)
     const fontContainer = container.querySelector('#font-select-container');
+    
+    // Определяем, какой шрифт показывать в селекте по умолчанию
+    let currentFontDisplay = 'RussoOne';
+    if (currentSettings.font === 'pressstart2p') currentFontDisplay = 'Press Start 2P';
+    if (currentSettings.font === 'tiny5duo') currentFontDisplay = 'Tiny5 Duo';
+
     fontContainer.appendChild(createSearchableSelect(
-        ['Minecraft', 'Tiny5 Duo'],
-        currentSettings.font === 'tiny5duo' ? 'Tiny5 Duo' : 'Minecraft',
+        ['RussoOne', 'Press Start 2P', 'Tiny5 Duo'],
+        currentFontDisplay,
         'Выберите шрифт', 'hidden-font-select',
-        (val) => { currentSettings.font = val === 'Tiny5 Duo' ? 'tiny5duo' : 'minecraft'; save(); }
+        (val) => { 
+            currentSettings.font = val === 'Press Start 2P' ? 'pressstart2p' : 
+                                  (val === 'Tiny5 Duo' ? 'tiny5duo' : 'russoone'); 
+            save(); 
+        }
     ));
 
     // 2. Тема оформления
@@ -265,7 +275,8 @@ export function renderSettingsView(container, profile) {
     const btnResetSettings = container.querySelector('#btn-reset-settings');
     setupHoldButton(btnResetSettings, async () => {
         currentSettings = {
-            font: 'minecraft', fontSize: 10, borderRadius: 12,
+            font: 'russoone', // RussoOne теперь по умолчанию
+            fontSize: 10, borderRadius: 12,
             useCustomColors: false, colors: { ...defaultColors },
             gradient: { enabled: false, color1: '#0f1115', color2: '#2c5364', angle: 135 },
             bgUrl: '', bgDarkness: 0, bgBlur: 0, particlesEnabled: false, particleCount: 30, theme: 'theme-glass'

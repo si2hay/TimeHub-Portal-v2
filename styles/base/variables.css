@@ -12,8 +12,8 @@
     --accent-text: #ffffff;
     --border-color: rgba(255, 255, 255, 0.1);
     
-    /* Базовые настройки */
-    --font-family: 'MinecraftRus', monospace;
+    /* Базовые настройки (RussoOne теперь по умолчанию) */
+    --font-family: 'RussoOne', sans-serif;
     --font-scale: 1;
     --transition: 0.3s ease;
 }
@@ -30,9 +30,20 @@ html {
     color-scheme: dark;
 }
 
-body.font-minecraft { --font-family: 'MinecraftRus', monospace; }
+body.font-russoone { 
+    --font-family: 'RussoOne', sans-serif; 
+}
+
+/* Пиксельный шрифт нужно делать меньше, так как он широкий */
+body.font-pressstart2p { 
+    --font-family: 'PressStart2P', monospace; 
+    font-size: calc(12px * var(--font-scale)); 
+    line-height: 1.4; 
+}
+
+/* Tiny5 Duo тоже немного уменьшаем */
 body.font-tiny5duo { 
-    --font-family: 'Tiny5Duo', monospace; 
+    --font-family: 'Tiny5Duo', sans-serif; 
     font-size: calc(20px * var(--font-scale)); 
     line-height: 1.1; 
 }

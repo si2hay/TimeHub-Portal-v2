@@ -35,10 +35,13 @@ function hexToRgba(hex, alpha) {
 export function applyUserSettings(settings) {
     if (!settings) return;
 
-    // Удалили font-tsap, добавили font-tiny5duo
-    document.body.classList.remove('font-minecraft', 'font-tiny5duo', 'theme-glass', 'theme-classic');
+    // Убираем все возможные классы шрифтов
+    document.body.classList.remove('font-russoone', 'font-pressstart2p', 'font-tiny5duo', 'theme-glass', 'theme-classic');
 
-    if (settings.font) document.body.classList.add(`font-${settings.font}`);
+    // Устанавливаем шрифт. Если старый 'minecraft', принудительно меняем на 'russoone'
+    let fontKey = settings.font || 'russoone';
+    if (fontKey === 'minecraft') fontKey = 'russoone';
+    document.body.classList.add(`font-${fontKey}`);
 
     const currentTheme = settings.theme || 'theme-glass';
     document.body.classList.add(currentTheme);
