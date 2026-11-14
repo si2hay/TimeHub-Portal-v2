@@ -1,6 +1,7 @@
 /**
  * @file src/ui/custom-datepicker.ui.js
  * @description Кастомный календарь с номерами учебных недель. Выходные заблокированы.
+ * На мобилках открывается как модальное окно по центру.
  */
 import { getWeekForDate } from '../features/date.logic.js';
 
@@ -37,13 +38,18 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     `;
     container.appendChild(uiDiv);
 
+    // Создаем оверлей для мобилок и добавляем его в body
+    const overlay = document.createElement('div');
+    overlay.className = 'datepicker-overlay';
+    document.body.appendChild(overlay);
+
     const capsule = uiDiv.querySelector('.datepicker-capsule');
-    const textEl = uiDiv.querySelector('.date-text'); // Находим элемент текста
+    const textEl = uiDiv.querySelector('.date-text');
     const dropdown = uiDiv.querySelector('.datepicker-dropdown');
     
+    // ИСПОЛЬЗУЕМ КЛАСС ВМЕСТО ИНЛАЙН-СТИЛЕЙ
     if (align === 'right') {
-        dropdown.style.left = 'auto';
-        dropdown.style.right = '0';
+        dropdown.classList.add('align-right');
     }
 
     const toggleParentStyles = (isOpen) => {
@@ -137,6 +143,7 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     }
 
     const openDropdown = () => {
+        // Закрываем все другие открытые календари и их оверлеи
         document.querySelectorAll('.datepicker-dropdown.open').forEach(d => {
             d.classList.remove('open');
             let p = d.parentElement;
@@ -147,14 +154,17 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
                 p = p.parentElement;
             }
         });
+        document.querySelectorAll('.datepicker-overlay.open').forEach(o => o.classList.remove('open'));
         
         dropdown.classList.add('open');
+        overlay.classList.add('open'); // Включаем оверлей
         toggleParentStyles(true);
         renderCalendar();
     };
 
     const closeDropdown = () => {
         dropdown.classList.remove('open');
+        overlay.classList.remove('open'); // Выключаем оверлей
         toggleParentStyles(false);
     };
 
@@ -176,8 +186,15 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         renderCalendar();
     });
 
+    // Клик по оверлею закрывает календарь
+    overlay.addEventListener('click', () => {
+        closeDropdown();
+    });
+
     document.addEventListener('click', (e) => {
-        if (!container.contains(e.target)) closeDropdown();
+        if (!container.contains(e.target) && !overlay.contains(e.target)) {
+            closeDropdown();
+        }
     });
 
     // МЕТОД ДЛЯ ВНЕШНЕГО ОБНОВЛЕНИЯ ДАТЫ

@@ -1,7 +1,7 @@
 /**
  * @file styles/components/custom-datepicker.css
  * @description Стили кастомного календаря (createDatepicker).
- * На мобилках убрана тяжёлая тень, transition: all заменён на конкретные свойства.
+ * На мобилках календарь открывается по центру экрана поверх оверлея.
  */
 
 .custom-datepicker-wrapper { position: relative; width: 100%; min-width: 0; }
@@ -21,11 +21,32 @@
     border: 1px solid var(--border-color);
     border-radius: 8px; margin-top: 5px; z-index: 1000;
     opacity: 0; visibility: hidden; transform: translateY(-10px);
-    /* transition: all → конкретные свойства */
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
+
+/* Класс для выравнивания по правому краю (вместо инлайн-стилей в JS) */
+.datepicker-dropdown.align-right {
+    left: auto;
+    right: 0;
+}
+
 .datepicker-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+
+/* Оверлей (затемнение фона) — нужен только на мобилках */
+.datepicker-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 9999;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s;
+    pointer-events: none;
+}
+.datepicker-overlay.open {
+    opacity: 1; visibility: visible; pointer-events: auto;
+}
 
 .dp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: var(--text-main); line-height: 1; font-size: calc(15px * var(--font-scale)); }
 .dp-nav-btn { background: transparent; border: none; color: var(--accent-color); cursor: pointer; font-size: calc(16px * var(--font-scale)); padding: 5px; }
@@ -53,14 +74,12 @@
     font-weight: bold; 
 }
 
-/* Если день и сегодняшний, и выбранный — рамка внутри заливки */
 .dp-day.today.selected {
     box-shadow: 0 0 0 2px var(--bg-color) inset;
 }
 
 .dp-day.empty { cursor: default; border: none; }
 
-/* Номер учебной недели */
 .dp-week-num {
     font-size: 8px;
     color: var(--text-muted);
@@ -70,20 +89,47 @@
     pointer-events: none;
 }
 .dp-day.selected .dp-week-num { color: rgba(255,255,255,0.8); }
-/* Неактивные дни (выходные) */
 .dp-day.disabled {
     opacity: 0.3;
     cursor: not-allowed;
-    pointer-events: none; /* Полностью блокируем клики */
+    pointer-events: none;
 }
 
 .dp-day.disabled:hover {
-    background: transparent; /* Убираем эффект наведения */
+    background: transparent;
 }
 
-/* На мобилках уменьшаем тень календаря — 30px blur на весь дропдаун дорого для GPU */
+/* =========================================
+   МОБИЛЬНЫЙ АДАПТИВ (Календарь по центру)
+   ========================================= */
 @media (max-width: 768px) {
     .datepicker-dropdown {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.95);
+        width: 90vw;
+        max-width: 340px;
+        margin-top: 0;
+        z-index: 10000;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        padding: 20px; /* Чуть больше воздуха для пальцев */
+        border-radius: 12px;
+    }
+    
+    /* Перебиваем выравнивание вправо, чтобы всегда было по центру */
+    .datepicker-dropdown.align-right {
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    .datepicker-dropdown.open {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    
+    /* Делаем дни чуть крупнее для удобного тапа */
+    .dp-day {
+        padding: 8px 0;
     }
 }
