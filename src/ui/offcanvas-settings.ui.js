@@ -145,13 +145,13 @@ export function renderSettingsView(container, profile) {
         btn.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
-    // 1. Шрифт
+    // 1. Шрифт (ТЕПЕРЬ TINY5 DUO)
     const fontContainer = container.querySelector('#font-select-container');
     fontContainer.appendChild(createSearchableSelect(
-        ['Minecraft', 'Tsap-Tsarap'],
-        currentSettings.font === 'tsap' ? 'Tsap-Tsarap' : 'Minecraft',
+        ['Minecraft', 'Tiny5 Duo'],
+        currentSettings.font === 'tiny5duo' ? 'Tiny5 Duo' : 'Minecraft',
         'Выберите шрифт', 'hidden-font-select',
-        (val) => { currentSettings.font = val === 'Tsap-Tsarap' ? 'tsap' : 'minecraft'; save(); }
+        (val) => { currentSettings.font = val === 'Tiny5 Duo' ? 'tiny5duo' : 'minecraft'; save(); }
     ));
 
     // 2. Тема оформления

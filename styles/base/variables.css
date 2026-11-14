@@ -31,8 +31,8 @@ html {
 }
 
 body.font-minecraft { --font-family: 'MinecraftRus', monospace; }
-body.font-tsap { 
-    --font-family: 'Tsap-Tsarap', sans-serif; 
+body.font-tiny5duo { 
+    --font-family: 'Tiny5Duo', monospace; 
     font-size: calc(20px * var(--font-scale)); 
     line-height: 1.1; 
 }

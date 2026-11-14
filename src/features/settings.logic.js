@@ -35,7 +35,8 @@ function hexToRgba(hex, alpha) {
 export function applyUserSettings(settings) {
     if (!settings) return;
 
-    document.body.classList.remove('font-minecraft', 'font-tsap', 'theme-glass', 'theme-classic');
+    // Удалили font-tsap, добавили font-tiny5duo
+    document.body.classList.remove('font-minecraft', 'font-tiny5duo', 'theme-glass', 'theme-classic');
 
     if (settings.font) document.body.classList.add(`font-${settings.font}`);
 
