@@ -38,6 +38,7 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     container.appendChild(uiDiv);
 
     const capsule = uiDiv.querySelector('.datepicker-capsule');
+    const textEl = uiDiv.querySelector('.date-text'); // Находим элемент текста
     const dropdown = uiDiv.querySelector('.datepicker-dropdown');
     
     if (align === 'right') {
@@ -106,7 +107,7 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             let classes = 'dp-day';
             if (isSelected) classes += ' selected';
             if (isToday) classes += ' today';
-            if (isWeekend) classes += ' disabled'; // Добавляем класс неактивности
+            if (isWeekend) classes += ' disabled';
             
             daysHTML += `
                 <div class="${classes}" data-date="${dateStr}" ${isWeekend ? '' : `data-clickable="true"`}>
@@ -124,6 +125,10 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
                 const dateStr = target.dataset.date;
                 selectedDate = new Date(dateStr);
                 hiddenInput.value = dateStr;
+                
+                // ФИКС: Обновляем текст в кнопке при клике
+                textEl.textContent = formatDate(selectedDate);
+                
                 closeDropdown();
                 if (onChange) onChange(dateStr);
                 renderCalendar();
@@ -181,6 +186,10 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         selectedDate = new Date(newDateStr);
         currentDate = new Date(newDateStr);
         hiddenInput.value = newDateStr;
+        
+        // ФИКС: Обновляем текст в кнопке при внешнем апдейте
+        textEl.textContent = formatDate(selectedDate);
+        
         renderCalendar();
     };
 
