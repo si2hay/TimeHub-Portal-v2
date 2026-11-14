@@ -1,7 +1,7 @@
 /**
  * @file styles/components/custom-select.css
  * @description Стили кастомного выпадающего списка с поиском (createSearchableSelect).
- * На мобилках убран внутренний blur и уменьшены тени — дропдаун открывается плавнее.
+ * Обновлено для лучшей адаптивности.
  */
 
 .custom-select-wrapper { 
@@ -24,10 +24,17 @@
     transition: border-color 0.2s;
     box-sizing: border-box; 
     line-height: 1.1;
+    min-width: 0;
 }
 
 .custom-capsule:hover { border-color: var(--accent-color); }
-.custom-capsule .capsule-text { overflow: hidden; text-overflow: ellipsis; flex-grow: 1; white-space: nowrap; }
+.custom-capsule .capsule-text { 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    flex-grow: 1; 
+    white-space: nowrap; 
+    min-width: 0;
+}
 .custom-capsule .capsule-text.placeholder { color: var(--text-muted); }
 .custom-capsule .arrow { font-size: 10px; transition: transform 0.3s; color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
 .custom-select-wrapper.open .custom-capsule .arrow { transform: rotate(180deg); color: var(--accent-color); }
@@ -37,7 +44,6 @@
     top: 100%; 
     left: 0; 
     width: 100%; 
-    /* Убрали min-width: 200px — иначе вылезал за пределы */
     min-width: 0;
     max-width: 100%;
     background: rgba(20, 22, 26, 0.98) !important; 
@@ -48,7 +54,6 @@
     opacity: 0; 
     visibility: hidden; 
     transform: translateY(-10px);
-    /* Конкретные свойства вместо transition: all */
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     max-height: 250px; 
     display: flex; 
@@ -77,7 +82,7 @@
     font-family: inherit; 
     box-sizing: border-box; 
     line-height: 1.1; 
-    font-size: max(16px, calc(14px * var(--font-scale))); /* 16px чтобы iOS не зумил */
+    font-size: max(16px, calc(14px * var(--font-scale)));
     transition: border-color 0.2s;
 }
 .dropdown-search:focus { border-color: var(--accent-color); }
@@ -94,13 +99,13 @@
     color: #fff !important; 
     transition: background-color 0.1s; 
     line-height: 1.1;
+    word-break: break-word;
 }
 .custom-option:hover { background: rgba(255,255,255,0.1) !important; }
 .custom-option.selected { background: var(--accent-color) !important; color: #fff !important; }
 
 .no-results { padding: 10px; text-align: center; color: var(--text-muted); font-size: calc(12px * var(--font-scale)); }
 
-/* На мобилках убираем тяжёлую тень совсем — дропдаун и так поверх контента */
 @media (max-width: 768px) {
     .custom-dropdown {
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);

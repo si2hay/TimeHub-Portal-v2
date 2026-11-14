@@ -1,12 +1,10 @@
 /**
  * @file src/ui/timer.ui.js
  * @description Компонент таймера (обычный виджет + полноэкранный режим).
- * DOM-ссылки кешируются в модуле — минус 12 getElementById в секунду.
- * Полноэкранный режим: убран крестик, время разбито на красивые блоки (д, ч, мин).
+ * DOM-ссылки кешируются в модуле.
+ * Время в обычном виджете выводится без лишних пробелов, чтобы не ломаться.
  */
 
-// Кеш DOM-элементов. Проверяем isConnected — если элемент удалён из DOM,
-// запрашиваем заново. Это спасает от «протухших» ссылок после ре-рендера.
 const els = {
     status: null,
     subject: null,
@@ -29,18 +27,15 @@ function getEl(key, id) {
     return el;
 }
 
-// Вспомогательная функция для красивого форматирования времени в фуллскрине.
-// Превращает "1 д 2 ч 5 мин" в HTML-блоки с крупными цифрами и мелкими подписями.
+// Форматирование для фуллскрина (блоки)
 function formatFullscreenTime(timeStr) {
     if (!timeStr) return '';
     
-    // Если это просто "00:00" или что-то непонятное
     if (timeStr === '00:00') {
         return `<div class="fs-time-group"><span class="fs-time-num">00</span><span class="fs-time-unit">мин</span></div>`;
     }
 
     let html = '';
-    // Ищем дни, часы и минуты с помощью регулярных выражений
     const dMatch = timeStr.match(/(\d+)\s*д/);
     const hMatch = timeStr.match(/(\d+)\s*ч/);
     const mMatch = timeStr.match(/(\d+)\s*мин/);
@@ -55,12 +50,18 @@ function formatFullscreenTime(timeStr) {
         html += `<div class="fs-time-group"><span class="fs-time-num">${mMatch[1]}</span><span class="fs-time-unit">мин</span></div>`;
     }
 
-    // Если ничего не нашли (fallback), выводим как есть
     if (html === '') {
         html = `<div class="fs-time-group"><span class="fs-time-num" style="font-size: 40px;">${timeStr}</span></div>`;
     }
 
     return html;
+}
+
+// Форматирование для обычного виджета (чтобы не было лишних пробелов, ломающих строку)
+function formatCompactTime(timeStr) {
+    if (!timeStr) return '';
+    // Заменяем неразрывными пробелами, чтобы "1 д 11 ч" не переносилось по кускам
+    return timeStr.replace(/ /g, '&nbsp;');
 }
 
 export function renderTimer(dayShort = '') {
@@ -89,7 +90,6 @@ export function renderTimer(dayShort = '') {
         </div>
     `;
 
-    // Создаем полноэкранный оверлей, если его еще нет
     let fullscreen = document.getElementById('fullscreen-timer');
     if (!fullscreen) {
         fullscreen = document.createElement('div');
@@ -102,7 +102,6 @@ export function renderTimer(dayShort = '') {
                 <div class="fs-room" id="fs-room"></div>
                 <div class="fs-time-label" id="fs-time-label">Осталось:</div>
                 
-                <!-- Сюда будут рендериться крупные цифры и мелкие подписи -->
                 <div class="fs-time-value" id="fs-time-value"></div>
                 
                 <div class="fs-progress-track">
@@ -114,13 +113,11 @@ export function renderTimer(dayShort = '') {
         `;
         document.body.appendChild(fullscreen);
 
-        // Закрытие по клику в ЛЮБОЕ место экрана
         fullscreen.addEventListener('click', () => {
             fullscreen.classList.remove('active');
         });
     }
 
-    // Открытие по клику на виджет (но не по кнопке "Ближайший")
     timerDiv.addEventListener('click', (e) => {
         if (e.target.closest('#btn-today')) return;
         fullscreen.classList.add('active');
@@ -130,7 +127,6 @@ export function renderTimer(dayShort = '') {
 }
 
 export function updateTimerUI(state) {
-    // 1. Обновляем обычный виджет
     const statusEl = getEl('status', 't-status');
     if (!statusEl) return; 
 
@@ -152,7 +148,8 @@ export function updateTimerUI(state) {
             timeLabel.style.visibility = 'visible';
             timeValueEl.style.visibility = 'visible';
             timeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
-            timeValueEl.textContent = state.timeLeft; // Обычный виджет оставляем строкой
+            // ФИКС: Используем неразрывные пробелы, чтобы время не ломалось без надобности
+            timeValueEl.innerHTML = formatCompactTime(state.timeLeft); 
         } else {
             timeLabel.style.visibility = 'hidden';
             timeValueEl.style.visibility = 'hidden';
@@ -165,7 +162,6 @@ export function updateTimerUI(state) {
         progressBar.style.width = `${p * 100}%`;
     }
 
-    // 2. Обновляем полноэкранный режим
     const fsStatus = getEl('fsStatus', 'fs-status');
     if (fsStatus) {
         fsStatus.textContent = state.text;
@@ -181,7 +177,6 @@ export function updateTimerUI(state) {
             fsTimeLabel.style.visibility = 'visible';
             fsTimeValue.style.visibility = 'visible';
             fsTimeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
-            // ФИКС: Рендерим разбитый по блокам HTML
             fsTimeValue.innerHTML = formatFullscreenTime(state.timeLeft);
         } else {
             fsTimeLabel.style.visibility = 'hidden';

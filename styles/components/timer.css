@@ -1,7 +1,7 @@
 /**
  * @file styles/components/timer.css
  * @description Стили для таймера (обычного и полноэкранного).
- * Полноэкранный таймер адаптирован под масштаб шрифта пользователя (clamp + var(--font-scale)).
+ * Запрещены переносы строк внутри кнопок и времени, чтобы не было каши при широких шрифтах.
  */
 
 .timer-widget {
@@ -36,6 +36,7 @@
     font-size: calc(15px * var(--font-scale));
     color: var(--text-main);
     opacity: 0.8;
+    word-break: break-word;
 }
 
 .timer-subject {
@@ -59,6 +60,7 @@
     gap: 10px;
     margin-top: 5px;
     min-height: 40px;
+    flex-wrap: wrap; /* Разрешаем перенос, если совсем не влезает */
 }
 
 .time-label {
@@ -74,6 +76,8 @@
     letter-spacing: 1px;
     transform: translateZ(0);
     font-variant-numeric: tabular-nums;
+    /* ФИКС: Не даем времени ломаться по пробелам, если есть место */
+    white-space: nowrap; 
 }
 
 .timer-progress-track {
@@ -99,25 +103,33 @@
     margin-top: 5px;
     font-size: calc(12px * var(--font-scale));
     color: var(--text-muted);
+    gap: 10px;
+    flex-wrap: wrap; /* Если экран слишком узкий — переносим */
 }
 
 .timer-footer-right {
     display: flex;
     align-items: center;
     gap: 8px;
+    /* ФИКС: Правая часть с кнопками не должна сжиматься */
+    flex-shrink: 0; 
+    margin-left: auto;
 }
 
 .btn-today-hint {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-color);
     color: var(--text-main);
-    padding: 2px 8px;
+    padding: 4px 10px; /* Чуть больше отступы */
     border-radius: 4px;
     font-weight: bold;
     font-size: calc(11px * var(--font-scale));
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
     font-family: inherit;
+    /* ФИКС: Запрещаем ломать текст по буквам */
+    white-space: nowrap; 
+    flex-shrink: 0;
 }
 .btn-today-hint:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -129,14 +141,21 @@
 .timer-btn-hint {
     background: var(--accent-color);
     color: var(--accent-text);
-    padding: 2px 8px;
+    padding: 4px 10px;
     border-radius: 4px;
     font-weight: bold;
     font-size: calc(11px * var(--font-scale));
+    /* ФИКС: Бейдж с днем недели тоже не должен ломаться */
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 30px;
 }
 
 /* =========================================
-   ПОЛНОЭКРАННЫЙ ТАЙМЕР (ПЕРЕРАБОТАН)
+   ПОЛНОЭКРАННЫЙ ТАЙМЕР
    ========================================= */
 .fullscreen-timer {
     position: fixed;
@@ -160,7 +179,6 @@
     cursor: pointer;
 }
 
-/* Контейнер для контента */
 .fs-content {
     display: flex;
     flex-direction: column;
@@ -185,13 +203,13 @@
     transform: scale(1);
 }
 
-/* ФИКС: Добавлен var(--font-scale) в clamp, чтобы работал ползунок */
 .fs-status {
     font-size: clamp(calc(16px * var(--font-scale)), 3vw, calc(22px * var(--font-scale)));
     color: var(--text-muted);
     margin-bottom: 12px;
     font-weight: 500;
     letter-spacing: 0.5px;
+    word-break: break-word;
 }
 
 .fs-subject {
@@ -223,7 +241,6 @@
     letter-spacing: 2px;
 }
 
-/* Контейнер для времени */
 .fs-time-value {
     display: flex;
     flex-wrap: wrap;
@@ -234,14 +251,12 @@
     min-height: 120px;
 }
 
-/* Блок с одной единицей времени (например, "19 ч") */
 .fs-time-group {
     display: flex;
     align-items: baseline;
     gap: 6px;
 }
 
-/* ФИКС: Сами цифры (огромные) теперь масштабируются */
 .fs-time-num {
     font-size: clamp(calc(60px * var(--font-scale)), 12vw, calc(120px * var(--font-scale)));
     font-weight: 900;
@@ -251,7 +266,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Подписи (ч, мин, д) */
 .fs-time-unit {
     font-size: clamp(calc(24px * var(--font-scale)), 4vw, calc(36px * var(--font-scale)));
     font-weight: 700;
@@ -279,7 +293,6 @@
     box-shadow: 0 0 15px var(--accent-color);
 }
 
-/* Подсказка внизу */
 .fs-hint {
     font-size: calc(14px * var(--font-scale));
     color: var(--text-muted);
@@ -289,9 +302,6 @@
     animation: pulse-text 2s infinite;
 }
 
-/* =========================================
-   МОБИЛЬНАЯ ОПТИМИЗАЦИЯ
-   ========================================= */
 @media (max-width: 768px) {
     .fullscreen-timer {
         backdrop-filter: none;
@@ -305,7 +315,6 @@
 
     .fs-time-num {
         text-shadow: 0 0 16px rgba(255, 255, 255, 0.1);
-        /* Ограничиваем максимальный размер на мобилках, чтобы не ломалось в ширину */
         font-size: clamp(calc(50px * var(--font-scale)), 14vw, calc(90px * var(--font-scale)));
     }
 
