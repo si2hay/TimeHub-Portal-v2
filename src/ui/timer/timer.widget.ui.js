@@ -1,8 +1,10 @@
 /**
  * @file src/ui/timer/timer.widget.ui.js
  * @description Обычный виджет таймера на главной странице.
+ * Добавлена защита от XSS для названий предметов.
  */
 import { formatCompactTime } from './timer.utils.js';
+import { escapeHTML } from '../../features/sanitize.utils.js';
 
 // Кешируем DOM-ссылки для виджета
 const els = {
@@ -64,7 +66,8 @@ export function updateTimerWidget(state) {
     const subjectEl = getEl('subject', 't-subject');
     if (subjectEl) {
         if (state.subject) {
-            subjectEl.innerHTML = `${state.subject} ${state.room ? `<span class="timer-room">• ${state.room}</span>` : ''}`;
+            // ФИКС XSS: Экранируем предмет и кабинет
+            subjectEl.innerHTML = `${escapeHTML(state.subject)} ${state.room ? `<span class="timer-room">• ${escapeHTML(state.room)}</span>` : ''}`;
         } else {
             subjectEl.textContent = '';
         }

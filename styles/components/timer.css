@@ -1,7 +1,7 @@
 /**
  * @file styles/components/timer.css
  * @description Стили для таймера (обычного и полноэкранного).
- * Запрещены переносы строк внутри кнопок и времени, чтобы не было каши при широких шрифтах.
+ * Убран ellipsis, теперь время аккуратно переносится на новую строку.
  */
 
 .timer-widget {
@@ -60,7 +60,8 @@
     gap: 10px;
     margin-top: 5px;
     min-height: 40px;
-    flex-wrap: wrap; /* Разрешаем перенос, если совсем не влезает */
+    flex-wrap: wrap;
+    overflow: hidden; 
 }
 
 .time-label {
@@ -69,15 +70,19 @@
 }
 
 .time-value {
-    font-size: calc(32px * var(--font-scale));
+    /* Адаптивный размер шрифта */
+    font-size: clamp(18px, calc(28px * var(--font-scale)), 40px);
     font-weight: bold;
     color: var(--text-main);
-    line-height: 1;
+    line-height: 1.1;
     letter-spacing: 1px;
     transform: translateZ(0);
     font-variant-numeric: tabular-nums;
-    /* ФИКС: Не даем времени ломаться по пробелам, если есть место */
-    white-space: nowrap; 
+    
+    /* ФИКС: Разрешаем перенос по словам, убираем троеточие */
+    white-space: normal;
+    word-break: break-word;
+    max-width: 100%;
 }
 
 .timer-progress-track {
@@ -104,14 +109,13 @@
     font-size: calc(12px * var(--font-scale));
     color: var(--text-muted);
     gap: 10px;
-    flex-wrap: wrap; /* Если экран слишком узкий — переносим */
+    flex-wrap: wrap;
 }
 
 .timer-footer-right {
     display: flex;
     align-items: center;
     gap: 8px;
-    /* ФИКС: Правая часть с кнопками не должна сжиматься */
     flex-shrink: 0; 
     margin-left: auto;
 }
@@ -120,14 +124,13 @@
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-color);
     color: var(--text-main);
-    padding: 4px 10px; /* Чуть больше отступы */
+    padding: 4px 10px;
     border-radius: 4px;
     font-weight: bold;
     font-size: calc(11px * var(--font-scale));
     cursor: pointer;
     transition: background 0.2s, transform 0.1s;
     font-family: inherit;
-    /* ФИКС: Запрещаем ломать текст по буквам */
     white-space: nowrap; 
     flex-shrink: 0;
 }
@@ -145,7 +148,6 @@
     border-radius: 4px;
     font-weight: bold;
     font-size: calc(11px * var(--font-scale));
-    /* ФИКС: Бейдж с днем недели тоже не должен ломаться */
     white-space: nowrap;
     display: flex;
     align-items: center;
