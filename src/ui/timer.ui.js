@@ -2,6 +2,7 @@
  * @file src/ui/timer.ui.js
  * @description Компонент таймера (обычный виджет + полноэкранный режим).
  * DOM-ссылки кешируются в модуле — минус 12 getElementById в секунду.
+ * Полноэкранный режим: убран крестик, время разбито на красивые блоки (д, ч, мин).
  */
 
 // Кеш DOM-элементов. Проверяем isConnected — если элемент удалён из DOM,
@@ -26,6 +27,40 @@ function getEl(key, id) {
     const el = document.getElementById(id);
     if (el) els[key] = el;
     return el;
+}
+
+// Вспомогательная функция для красивого форматирования времени в фуллскрине.
+// Превращает "1 д 2 ч 5 мин" в HTML-блоки с крупными цифрами и мелкими подписями.
+function formatFullscreenTime(timeStr) {
+    if (!timeStr) return '';
+    
+    // Если это просто "00:00" или что-то непонятное
+    if (timeStr === '00:00') {
+        return `<div class="fs-time-group"><span class="fs-time-num">00</span><span class="fs-time-unit">мин</span></div>`;
+    }
+
+    let html = '';
+    // Ищем дни, часы и минуты с помощью регулярных выражений
+    const dMatch = timeStr.match(/(\d+)\s*д/);
+    const hMatch = timeStr.match(/(\d+)\s*ч/);
+    const mMatch = timeStr.match(/(\d+)\s*мин/);
+
+    if (dMatch) {
+        html += `<div class="fs-time-group"><span class="fs-time-num">${dMatch[1]}</span><span class="fs-time-unit">д</span></div>`;
+    }
+    if (hMatch) {
+        html += `<div class="fs-time-group"><span class="fs-time-num">${hMatch[1]}</span><span class="fs-time-unit">ч</span></div>`;
+    }
+    if (mMatch) {
+        html += `<div class="fs-time-group"><span class="fs-time-num">${mMatch[1]}</span><span class="fs-time-unit">мин</span></div>`;
+    }
+
+    // Если ничего не нашли (fallback), выводим как есть
+    if (html === '') {
+        html = `<div class="fs-time-group"><span class="fs-time-num" style="font-size: 40px;">${timeStr}</span></div>`;
+    }
+
+    return html;
 }
 
 export function renderTimer(dayShort = '') {
@@ -61,21 +96,26 @@ export function renderTimer(dayShort = '') {
         fullscreen.id = 'fullscreen-timer';
         fullscreen.className = 'fullscreen-timer';
         fullscreen.innerHTML = `
-            <button class="fullscreen-close" id="fs-close">✖</button>
-            <div class="fs-status" id="fs-status"></div>
-            <div class="fs-subject" id="fs-subject"></div>
-            <div class="fs-room" id="fs-room"></div>
-            <div class="fs-time-label" id="fs-time-label">Осталось:</div>
-            <div class="fs-time-value" id="fs-time-value">00:00</div>
-            <div class="fs-progress-track">
-                <div class="fs-progress-fill" id="fs-progress"></div>
+            <div class="fs-content">
+                <div class="fs-status" id="fs-status"></div>
+                <div class="fs-subject" id="fs-subject"></div>
+                <div class="fs-room" id="fs-room"></div>
+                <div class="fs-time-label" id="fs-time-label">Осталось:</div>
+                
+                <!-- Сюда будут рендериться крупные цифры и мелкие подписи -->
+                <div class="fs-time-value" id="fs-time-value"></div>
+                
+                <div class="fs-progress-track">
+                    <div class="fs-progress-fill" id="fs-progress"></div>
+                </div>
+                
+                <div class="fs-hint">Нажми в любом месте, чтобы закрыть</div>
             </div>
         `;
         document.body.appendChild(fullscreen);
 
-        // Обработчик закрытия
-        fullscreen.querySelector('#fs-close').addEventListener('click', (e) => {
-            e.stopPropagation();
+        // Закрытие по клику в ЛЮБОЕ место экрана
+        fullscreen.addEventListener('click', () => {
             fullscreen.classList.remove('active');
         });
     }
@@ -112,7 +152,7 @@ export function updateTimerUI(state) {
             timeLabel.style.visibility = 'visible';
             timeValueEl.style.visibility = 'visible';
             timeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
-            timeValueEl.textContent = state.timeLeft;
+            timeValueEl.textContent = state.timeLeft; // Обычный виджет оставляем строкой
         } else {
             timeLabel.style.visibility = 'hidden';
             timeValueEl.style.visibility = 'hidden';
@@ -130,7 +170,10 @@ export function updateTimerUI(state) {
     if (fsStatus) {
         fsStatus.textContent = state.text;
         getEl('fsSubject', 'fs-subject').textContent = state.subject || '';
-        getEl('fsRoom', 'fs-room').textContent = state.room ? `📍 ${state.room}` : '';
+        
+        const fsRoom = getEl('fsRoom', 'fs-room');
+        fsRoom.textContent = state.room ? `📍 ${state.room}` : '';
+        fsRoom.style.display = state.room ? 'inline-block' : 'none';
         
         const fsTimeLabel = getEl('fsTimeLabel', 'fs-time-label');
         const fsTimeValue = getEl('fsTimeValue', 'fs-time-value');
@@ -138,7 +181,8 @@ export function updateTimerUI(state) {
             fsTimeLabel.style.visibility = 'visible';
             fsTimeValue.style.visibility = 'visible';
             fsTimeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
-            fsTimeValue.textContent = state.timeLeft;
+            // ФИКС: Рендерим разбитый по блокам HTML
+            fsTimeValue.innerHTML = formatFullscreenTime(state.timeLeft);
         } else {
             fsTimeLabel.style.visibility = 'hidden';
             fsTimeValue.style.visibility = 'hidden';
