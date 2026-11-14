@@ -1,8 +1,8 @@
 /**
  * @file styles/components/card.css
  * @description Карточки расписания, скелетоны, точки пагинации и анимации.
- * На мобилках тени уменьшены, backdrop-filter на бейдже замены убран.
- * Добавлены анимации pulse-text (для текста загрузки) и fade-in (плавное появление).
+ * Убраны жесткие min-height, чтобы карточки тянулись под размер текста.
+ * Добавлены анимации pulse-text и fade-in.
  */
 
 /* === РАСПИСАНИЕ (контейнер) === */
@@ -25,7 +25,6 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    /* will-change убран из постоянки — включается классом .is-animating */
 }
 
 .schedule-content-wrap.is-animating {
@@ -47,10 +46,11 @@
     text-align: center;
     color: var(--text-muted);
     padding: 30px 20px;
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale));
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: var(--border-radius);
+    word-break: break-word;
 }
 
 /* === СКЕЛЕТОН ЗАГРУЗКИ === */
@@ -100,7 +100,7 @@
     animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* === АНИМАЦИЯ ПУЛЬСАЦИИ ДЛЯ ТЕКСТА (для "Загрузка...") === */
+/* === АНИМАЦИЯ ПУЛЬСАЦИИ ДЛЯ ТЕКСТА === */
 @keyframes pulse-text {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
@@ -157,7 +157,8 @@
     align-items: stretch; 
     padding: 0 !important; 
     overflow: hidden; 
-    min-height: 90px; 
+    /* ФИКС: Заменили жесткий min-height на fit-content */
+    min-height: fit-content; 
     position: relative;
     transition: background 0.2s ease-out, box-shadow 0.2s ease-out;
     background: var(--glass-bg);
@@ -177,13 +178,14 @@
     flex-direction: column; 
     justify-content: center; 
     align-items: center; 
-    min-width: 90px; 
+    /* Уменьшили min-width, чтобы дать тексту больше места */
+    min-width: 80px; 
     border-right: 1px solid var(--border-color); 
     flex-shrink: 0;
 }
 
-.lesson-num { font-size: 24px; font-weight: bold; color: var(--accent-color); line-height: 1; margin-bottom: 4px; }
-.lesson-clock { font-size: 12px; color: var(--text-muted); white-space: nowrap; line-height: 16px; display: block; }
+.lesson-num { font-size: calc(24px * var(--font-scale)); font-weight: bold; color: var(--accent-color); line-height: 1; margin-bottom: 4px; }
+.lesson-clock { font-size: calc(12px * var(--font-scale)); color: var(--text-muted); white-space: normal; text-align: center; line-height: 1.2; display: block; word-break: break-word; }
 .lesson-info { 
     padding: 12px 14px; 
     display: flex; 
@@ -193,39 +195,35 @@
     min-width: 0; 
     gap: 6px; 
 }
-.lesson-subject { font-size: 16px; font-weight: bold; line-height: 1.2; word-wrap: break-word; }
-.lesson-details { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.1; }
-.lesson-room { color: #f59e0b; white-space: nowrap; }
-.lesson-teacher { opacity: 0.8; word-wrap: break-word; }
+.lesson-subject { font-size: calc(16px * var(--font-scale)); font-weight: bold; line-height: 1.2; overflow-wrap: anywhere; }
+.lesson-details { display: flex; flex-wrap: wrap; gap: 8px; font-size: calc(12px * var(--font-scale)); color: var(--text-muted); line-height: 1.1; }
+.lesson-room { color: #f59e0b; white-space: normal; word-break: break-word; }
+.lesson-teacher { opacity: 0.8; word-wrap: break-word; overflow-wrap: anywhere; }
 
 /* Замены */
 .schedule-card.is-substitution { border-color: rgba(239, 68, 68, 0.6) !important; box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.08), 0 4px 15px rgba(0,0,0,0.15); }
 .badge-substitution {
     position: absolute; top: 8px; right: 8px; background: rgba(239, 68, 68, 0.85);
     backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); color: white;
-    font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
-    line-height: 1;
+    font-size: calc(10px * var(--font-scale)); font-weight: bold; padding: 3px 8px; border-radius: 6px; text-transform: uppercase;
+    line-height: 1; z-index: 2;
 }
-
-body.font-tsap .lesson-num { font-size: 26px; }
-body.font-tsap .lesson-subject { font-size: 18px; }
 
 /* === ВИДЖЕТ: НЕДЕЛЯ + ПОГОДА === */
 .dashboard-widget { margin-bottom: 20px; display: flex; flex-direction: column; }
-.widget-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(0,0,0,0.1); border-bottom: 1px solid var(--border-color); }
+.widget-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(0,0,0,0.1); border-bottom: 1px solid var(--border-color); gap: 10px; }
 .week-label-wrapper { display: flex; align-items: center; gap: 8px; }
-.week-label { font-weight: bold; font-size: 15px; background: var(--accent-color); color: var(--accent-text); padding: 4px 12px; border-radius: 12px; transition: background 0.2s, color 0.2s; }
-.widget-body { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; }
-.weather-content { display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.clothing-advice { font-size: 12px; color: var(--text-muted); text-align: right; font-style: italic; }
-.widget-footer { padding: 0 20px 10px 20px; font-size: 11px; color: var(--text-muted); text-align: center; }
+.week-label { font-weight: bold; font-size: calc(15px * var(--font-scale)); background: var(--accent-color); color: var(--accent-text); padding: 4px 12px; border-radius: 12px; transition: background 0.2s, color 0.2s; text-align: center; word-break: break-word; }
+.widget-body { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; flex-wrap: wrap; gap: 10px; }
+.weather-content { display: flex; align-items: center; gap: 8px; font-size: calc(14px * var(--font-scale)); flex-wrap: wrap; }
+.clothing-advice { font-size: calc(12px * var(--font-scale)); color: var(--text-muted); text-align: right; font-style: italic; word-break: break-word; }
+.widget-footer { padding: 0 20px 10px 20px; font-size: calc(11px * var(--font-scale)); color: var(--text-muted); text-align: center; word-break: break-word; }
 
-/* Стили для новой даты в виджете */
 .current-date-label {
     opacity: 0.6;
     margin-left: 4px;
     font-weight: normal;
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale));
 }
 
 /* === ПОДВАЛ САЙТА === */
@@ -234,13 +232,13 @@ body.font-tsap .lesson-subject { font-size: 18px; }
     padding: 20px 0 30px 0;
     border-top: 1px solid var(--border-color);
     text-align: center;
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale));
     color: var(--text-muted);
 }
 .footer-content { display: flex; flex-direction: column; gap: 10px; }
 .footer-info a { color: var(--accent-color); text-decoration: none; font-weight: bold; }
 .footer-info a:hover { text-decoration: underline; }
-.footer-thanks { font-size: 11px; opacity: 0.5; font-style: italic; }
+.footer-thanks { font-size: calc(11px * var(--font-scale)); opacity: 0.5; font-style: italic; }
 
 /* === МОДАЛКА ПОЛНОГО РАСПИСАНИЯ === */
 .full-schedule-container {
@@ -250,23 +248,22 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 }
 .full-schedule-week-title {
     color: var(--accent-color);
-    font-size: 18px;
+    font-size: calc(18px * var(--font-scale));
     margin: 20px 0 10px 0;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 5px;
+    word-break: break-word;
 }
 .full-schedule-week-title:first-child { margin-top: 0; }
 .full-schedule-day-title {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale));
     color: var(--text-muted);
     margin: 15px 0 5px 0;
     font-weight: bold;
+    word-break: break-word;
 }
 .full-schedule-container .schedule-slide-content {
     gap: 8px;
-}
-.full-schedule-container .schedule-card {
-    min-height: 70px;
 }
 
 /* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ === */

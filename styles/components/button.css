@@ -1,6 +1,7 @@
 /**
  * @file styles/components/button.css
  * @description Единая система кнопок (адаптивная, стеклянная).
+ * Исправлено переполнение текста при большом размере шрифта (white-space: normal).
  */
 
 .btn {
@@ -14,15 +15,21 @@
     font-size: calc(14px * var(--font-scale));
     font-weight: 600;
     cursor: pointer;
-    /* transition: all → конкретные свойства. Браузер не отслеживает всё подряд,
-       на слабом CPU это заметно при сотне кнопок в админке. */
     transition: background-color 0.2s ease, color 0.2s ease,
                 border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
     border: 1px solid transparent;
     text-decoration: none;
     box-sizing: border-box;
     outline: none;
-    white-space: nowrap;
+    
+    /* ФИКС: Разрешаем перенос строк, чтобы длинный текст не вылезал */
+    white-space: normal;
+    text-align: center;
+    word-break: break-word;
+    height: auto; 
+    min-height: 40px;
+    line-height: 1.2;
+
     width: auto;
     -webkit-tap-highlight-color: transparent;
 }
@@ -82,6 +89,7 @@
     padding: 0;
     width: calc(32px * var(--font-scale));
     height: calc(32px * var(--font-scale));
+    min-height: calc(32px * var(--font-scale));
     border-radius: calc(var(--border-radius) * 0.6);
     flex-shrink: 0;
     font-size: calc(14px * var(--font-scale));
@@ -137,7 +145,6 @@
     background: #ef4444;
     z-index: -1;
     border-radius: 50% 50% 0 0 / 20px 20px 0 0; 
-    /* Используем переменную --hold-duration */
     transition: height var(--hold-duration) linear, border-radius var(--hold-duration) ease;
 }
 

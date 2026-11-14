@@ -1,8 +1,7 @@
 /**
  * @file styles/components/settings.css
  * @description Стили для аккордеонов, слайдеров и тумблеров в меню настроек.
- * На мобилках убран внутренний backdrop-filter — он дублировал блюр .offcanvas-view
- * и вызывал фризы при открытии аккордеонов. Анимация аккордеона ускорена.
+ * Убран жесткий nowrap для строк, чтобы текст и элементы не наезжали друг на друга.
  */
 
 .settings-group { 
@@ -10,24 +9,20 @@
     border: 1px solid var(--border-color); 
     border-radius: var(--border-radius); 
     overflow: hidden; 
-    /* Делаем фон аккордеонов чуть светлее, чтобы они выделялись на темном меню */
     background: rgba(255, 255, 255, 0.08); 
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     position: relative;
 }
-.settings-header { display: flex; justify-content: space-between; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.1; touch-action: manipulation; }
-.settings-header .arrow { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); color: var(--accent-color); }
+.settings-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; font-weight: bold; font-size: calc(15px * var(--font-scale)); line-height: 1.2; touch-action: manipulation; gap: 10px; }
+.settings-header .arrow { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); color: var(--accent-color); flex-shrink: 0; }
 .settings-group.active .settings-header .arrow { transform: rotate(180deg); }
 
-/* Плавная анимация аккордеона.
-   grid-template-rows работает без пересчёта высоты контента — это лучший вариант для плавности. */
 .settings-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .settings-group.active .settings-content { grid-template-rows: 1fr; }
 .settings-inner { overflow: hidden; padding: 0 16px; }
 .settings-group.active .settings-inner { padding: 16px; border-top: 1px solid var(--border-color); }
 
-/* Фикс для выпадения кастомных списков за пределы аккордеона */
 .settings-group.allow-overflow { overflow: visible !important; z-index: 50; }
 .settings-inner.allow-overflow { overflow: visible !important; }
 .settings-content.allow-overflow { overflow: visible !important; }
@@ -40,21 +35,21 @@
     padding: 10px 0; 
     border-bottom: 1px solid var(--border-color); 
     gap: 10px; 
-    flex-wrap: nowrap;
+    /* ФИКС: Разрешаем перенос элементов, если не влезают */
+    flex-wrap: wrap; 
 }
 .setting-row:last-child { border-bottom: none; }
 
 .setting-row span.label { 
     font-size: calc(14px * var(--font-scale)); 
     flex: 1; 
-    min-width: 0; 
+    min-width: 120px; /* Даем минимальную ширину лейблу */
     text-shadow: 0 1px 2px rgba(0,0,0,0.8); 
     line-height: 1.2; 
     white-space: normal; 
     word-break: break-word;
 }
 
-/* Инпуты внутри настроек — transition конкретный, не all */
 .setting-row input[type="text"], 
 .setting-row input[type="time"], 
 .setting-row input[type="date"],
@@ -65,11 +60,11 @@
     padding: 8px; border-radius: 6px; font-family: inherit; outline: none; line-height: 1.1;
     font-size: calc(14px * var(--font-scale));
     transition: border-color 0.2s, box-shadow 0.2s;
+    max-width: 100%;
 }
 .setting-row input[type="text"]:focus,
 .setting-row .admin-select:focus { border-color: var(--accent-color); }
 
-/* Цветовые инпуты */
 .setting-row input[type="color"] { 
     width: 40px; height: 40px; 
     border: none; 
@@ -94,7 +89,7 @@
     align-items: center; 
     gap: 8px; 
     flex: 1; 
-    min-width: 0; 
+    min-width: 140px; 
     justify-content: flex-end;
 }
 
@@ -103,7 +98,7 @@ input[type="range"] {
     appearance: none;
     height: 24px; 
     width: 100%;
-    min-width: 80px;
+    min-width: 60px;
     max-width: 140px;
     background: transparent; 
     outline: none; 
@@ -111,7 +106,6 @@ input[type="range"] {
     cursor: pointer;
 }
 
-/* Дорожка (серая полоса) */
 input[type="range"]::-webkit-slider-runnable-track { 
     height: 6px; 
     background: rgba(128, 128, 128, 0.3); 
@@ -123,7 +117,6 @@ input[type="range"]::-moz-range-track {
     border-radius: 3px; 
 }
 
-/* Бегунок (кружок) */
 input[type="range"]::-webkit-slider-thumb { 
     -webkit-appearance: none; 
     width: 20px; 
@@ -144,7 +137,6 @@ input[type="range"]::-moz-range-thumb {
     box-shadow: none;
 }
 
-/* Числовое поле рядом с ползунком */
 .slider-input {
     width: 45px; min-width: 45px; max-width: 45px; 
     flex-shrink: 0; padding: 4px; text-align: center; box-sizing: border-box;
@@ -157,7 +149,6 @@ input[type="range"]::-moz-range-thumb {
 }
 .slider-input::-webkit-outer-spin-button, .slider-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-/* Тумблеры — transition конкретный, не all */
 .toggle-switch { position: relative; display: inline-block; width: 46px; height: 24px; flex-shrink: 0; touch-action: manipulation; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(128, 128, 128, 0.3); transition: background-color 0.3s; border-radius: 24px; }
@@ -165,9 +156,7 @@ input[type="range"]::-moz-range-thumb {
 input:checked + .toggle-slider { background-color: var(--accent-color); }
 input:checked + .toggle-slider:before { transform: translateX(22px); }
 
-/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ ===
-   Внутренний backdrop-filter убираем полностью: он дублировал блюр .offcanvas-view.
-   Анимацию аккордеона делаем чуть быстрее — субъективно ощущается «нативнее». */
+/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ === */
 @media (max-width: 768px) {
     .settings-group {
         backdrop-filter: none;
@@ -183,7 +172,6 @@ input:checked + .toggle-slider:before { transform: translateX(22px); }
     }
 }
 
-/* Для пользователей с prefers-reduced-motion — анимация аккордеона без задержки */
 @media (prefers-reduced-motion: reduce) {
     .settings-content,
     .settings-header .arrow,
