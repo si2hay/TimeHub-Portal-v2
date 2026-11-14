@@ -165,6 +165,7 @@ async function initApp() {
 
                             <div class="widget-footer">
                                 Сейчас идет: <strong>${realWeek} неделя</strong>
+                                <span class="current-date-label">(${formatDateRus(realDateStr)})</span>
                             </div>
                         </div>
 

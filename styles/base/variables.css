@@ -24,6 +24,12 @@
     100% { background-position: 0% 50%; }
 }
 
+/* ФОН ТЕПЕРЬ НА HTML, ЧТОБЫ ЧАСТИЦЫ БЫЛИ ВИДНЫ */
+html {
+    background-color: var(--bg-color);
+    color-scheme: dark;
+}
+
 body.font-minecraft { --font-family: 'MinecraftRus', monospace; }
 body.font-tsap { 
     --font-family: 'Tsap-Tsarap', sans-serif; 
@@ -34,14 +40,13 @@ body.font-tsap {
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-color);
+    background-color: transparent; /* Делаем прозрачным, чтобы видеть частицы */
     color: var(--text-main);
     font-family: var(--font-family);
     font-size: calc(16px * var(--font-scale));
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     background-attachment: fixed; 
-    color-scheme: dark;
     transition: background 0.3s;
 }
 

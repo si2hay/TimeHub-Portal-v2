@@ -194,6 +194,14 @@ body.font-tsap .lesson-subject { font-size: 18px; }
 .clothing-advice { font-size: 12px; color: var(--text-muted); text-align: right; font-style: italic; }
 .widget-footer { padding: 0 20px 10px 20px; font-size: 11px; color: var(--text-muted); text-align: center; }
 
+/* Стили для новой даты в виджете */
+.current-date-label {
+    opacity: 0.6;
+    margin-left: 4px;
+    font-weight: normal;
+    font-size: 11px;
+}
+
 /* === ПОДВАЛ САЙТА === */
 .app-footer {
     margin-top: auto;
