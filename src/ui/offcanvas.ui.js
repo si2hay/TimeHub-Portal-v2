@@ -6,6 +6,7 @@
  *  - анимация калькулятора через WAAPI (без reflow);
  *  - аккордеон консультаций открывается мгновенно (toggle до await),
  *    данные грузятся в фоне + кеш в модуле + предзагрузка при открытии меню.
+ *  - Модалка "Расписание на 2 недели" показывает мерцающий скелетон вместо текста.
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
@@ -14,7 +15,7 @@ import { getScheduleForDay } from '../api/schedule.api.js';
 import { getSubstitutions } from '../api/substitution.api.js';
 import { applySubstitutions } from '../features/substitution.logic.js';
 import { getWeekByOffset, getDateForDayAndWeek } from '../features/date.logic.js';
-import { renderFullSchedule } from './schedule.ui.js';
+import { renderFullSchedule, renderSkeleton } from './schedule.ui.js';
 
 const CONSULT_DAYS = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
 
@@ -59,6 +60,45 @@ function renderConsultsList(consults) {
     return html;
 }
 
+// Скелетон для модалки "Расписание на 2 недели"
+function renderFullScheduleSkeleton() {
+    const container = document.createElement('div');
+    container.className = 'full-schedule-container';
+
+    // Имитация заголовка 1 недели
+    const w1 = document.createElement('h3');
+    w1.className = 'full-schedule-week-title skeleton-block';
+    w1.style.width = '100px';
+    w1.style.height = '24px';
+    w1.style.marginBottom = '15px';
+    w1.style.borderBottom = 'none';
+    container.appendChild(w1);
+
+    // Имитация дня 1
+    const d1 = document.createElement('h4');
+    d1.className = 'full-schedule-day-title skeleton-block';
+    d1.style.width = '80px';
+    d1.style.height = '16px';
+    d1.style.marginBottom = '10px';
+    container.appendChild(d1);
+    
+    // Готовые мерцающие карточки из schedule.ui.js
+    container.appendChild(renderSkeleton());
+
+    // Имитация дня 2
+    const d2 = document.createElement('h4');
+    d2.className = 'full-schedule-day-title skeleton-block';
+    d2.style.width = '90px';
+    d2.style.height = '16px';
+    d2.style.marginTop = '20px';
+    d2.style.marginBottom = '10px';
+    container.appendChild(d2);
+    
+    container.appendChild(renderSkeleton());
+
+    return container;
+}
+
 export function createOffcanvas(profile) {
     const tg = window.Telegram?.WebApp;
     const base = import.meta.env.BASE_URL;
@@ -68,10 +108,7 @@ export function createOffcanvas(profile) {
     const avatarLetter = email.charAt(0).toUpperCase();
 
     // Кеш консультаций на уровне экземпляра меню.
-    // null = ещё не грузили, [] = пусто, [{...}] = данные.
     let consultsCache = null;
-    // Промис загрузки — чтобы не дублировать запросы, если пользователь
-    // быстро открывает/закрывает меню.
     let consultsLoadingPromise = null;
 
     const overlay = document.createElement('div');
@@ -213,8 +250,6 @@ export function createOffcanvas(profile) {
             display.classList.add('empty');
         }
 
-        // WAAPI вместо classList.remove + void offsetWidth + classList.add.
-        // Без синхронного reflow — не дёргает layout при каждом клике.
         if (popAnim) popAnim.cancel();
         popAnim = display.animate(
             [
@@ -247,8 +282,6 @@ export function createOffcanvas(profile) {
     calcContainer.querySelector('#calc-clear').addEventListener('click', () => { calcValue = ''; updateCalc(); });
 
     // --- КОНСУЛЬТАЦИИ: КЕШ + ПРЕДЗАГРУЗКА ---
-    // Функция грузит консультации один раз. Повторные вызовы возвращают
-    // тот же промис (пока загрузка идёт) или уже готовые данные из кеша.
     const loadConsults = () => {
         if (consultsCache !== null) return Promise.resolve(consultsCache);
         if (consultsLoadingPromise) return consultsLoadingPromise;
@@ -263,8 +296,6 @@ export function createOffcanvas(profile) {
         return consultsLoadingPromise;
     };
 
-    // Сюда рендерим результат, если аккордеон открыт к моменту прихода данных.
-    // Если уже закрыт — ничего не делаем, данные полежат в кеше.
     const applyConsultsToContainer = (container, consults) => {
         if (!container.isConnected) return;
         container.innerHTML = renderConsultsList(consults);
@@ -282,30 +313,25 @@ export function createOffcanvas(profile) {
             refGroups.forEach(g => { if (g !== group) g.classList.remove('active'); });
             group.classList.toggle('active');
 
-            // 2) И только ПОСЛЕ этого занимаемся данными (если группа консультаций).
+            // 2) И только ПОСЛЕ этого занимаемся данными.
             if (group.id === 'ref-group-consults' && isOpening) {
                 const container = group.querySelector('#consults-container');
                 if (!container) return;
 
-                // Если кеш уже есть — рендерим мгновенно, никаких скелетонов.
                 if (consultsCache !== null) {
                     applyConsultsToContainer(container, consultsCache);
                     return;
                 }
 
-                // Кеша нет. Показываем скелетон с задержкой 150 мс —
-                // если ответ придёт быстрее, пользователь его не увидит.
                 let skeletonShown = false;
                 const skeletonTimer = setTimeout(() => {
                     skeletonShown = true;
                     if (container.isConnected) container.innerHTML = renderConsultsSkeleton();
                 }, 150);
 
-                // Данные грузим в фоне. UI уже открыт, анимация уже идёт.
                 loadConsults()
                     .then(data => {
                         clearTimeout(skeletonTimer);
-                        // Если пользователь уже закрыл меню/аккордеон — не трогаем DOM.
                         if (!container.isConnected) return;
                         applyConsultsToContainer(container, data);
                     })
@@ -337,8 +363,7 @@ export function createOffcanvas(profile) {
             tg.BackButton.show();
             tg.BackButton.onClick(() => history.back());
         }
-        // Предзагрузка консультаций в фоне, пока пользователь смотрит профиль.
-        // К моменту клика на аккордеон данные, скорее всего, уже придут.
+        // Предзагрузка консультаций в фоне
         if (consultsCache === null && !consultsLoadingPromise) {
             loadConsults().catch(() => { /* ошибку покажем при открытии аккордеона */ });
         }
@@ -394,7 +419,11 @@ export function createOffcanvas(profile) {
     };
 
     offcanvas.querySelector('#btn-full-schedule').addEventListener('click', async () => {
-        showModal('Расписание на 2 недели', '<div style="text-align:center; padding:20px;">Загрузка всех дней...</div>');
+        // 1. Открываем модалку и СРАЗУ показываем скелетон (без текста "Загрузка...")
+        showModal('Расписание на 2 недели', '');
+        const modalBody = document.querySelector('#global-modal .modal-body');
+        modalBody.appendChild(renderFullScheduleSkeleton());
+
         try {
             const weeksData = [];
             for (let w = 0; w < 2; w++) {
@@ -410,10 +439,15 @@ export function createOffcanvas(profile) {
                 }
                 weeksData.push({ weekNum, days });
             }
-            document.querySelector('#global-modal .modal-body').innerHTML = '';
-            document.querySelector('#global-modal .modal-body').appendChild(renderFullSchedule(userGroup, weeksData));
+
+            // 2. Когда данные пришли — заменяем скелетон на контент с плавным появлением
+            modalBody.innerHTML = '';
+            const finalContent = renderFullSchedule(userGroup, weeksData);
+            finalContent.classList.add('fade-in');
+            modalBody.appendChild(finalContent);
+
         } catch (err) {
-            document.querySelector('#global-modal .modal-body').innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка загрузки расписания.</div>';
+            modalBody.innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка загрузки расписания.</div>';
         }
     });
 
@@ -460,8 +494,6 @@ export function createOffcanvas(profile) {
         }
     };
 
-    // На тач-устройствах mousemove/mouseup не срабатывают, но слушатели висят.
-    // Вешаем их только если основное устройство ввода — мышь (ПК).
     const isPointerFine = window.matchMedia('(pointer: fine)').matches;
 
     offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
