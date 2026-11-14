@@ -1,7 +1,7 @@
 /**
  * @file styles/components/custom-datepicker.css
  * @description Стили кастомного календаря (createDatepicker).
- * Защищен от вылезания за края экрана через max-width.
+ * Исправлено переполнение текста в ячейках (min-width: 0).
  */
 
 .custom-datepicker-wrapper { position: relative; width: 100%; min-width: 0; }
@@ -20,8 +20,8 @@
     top: 100%; 
     left: 0; 
     
-    /* ФИКС: Жестко задаем ширину, но не даем вылезти за экран */
-    width: 280px;
+    /* Жестко задаем ширину, но не даем вылезти за экран */
+    width: 290px;
     max-width: calc(100vw - 32px); 
     
     background: rgba(20, 22, 26, 0.98) !important; 
@@ -56,7 +56,12 @@
     font-size: calc(13px * var(--font-scale)); color: var(--text-main); transition: background-color 0.2s; line-height: 1.1;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     border: 2px solid transparent;
+    
+    /* КРИТИЧЕСКИЙ ФИКС: Разрешаем ячейке сжиматься */
+    min-width: 0; 
+    overflow: hidden;
 }
+
 .dp-day:hover { background: rgba(128,128,128,0.2); }
 
 /* СЕГОДНЯШНИЙ ДЕНЬ — РАМКА */
@@ -79,12 +84,14 @@
 .dp-day.empty { cursor: default; border: none; }
 
 .dp-week-num {
-    font-size: 8px;
+    /* Привязываем размер к общему масштабу шрифта */
+    font-size: calc(7px * var(--font-scale));
     color: var(--text-muted);
     opacity: 0.8;
     margin-top: 2px;
     line-height: 1;
     pointer-events: none;
+    white-space: nowrap; /* Запрещаем перенос текста "нед." */
 }
 .dp-day.selected .dp-week-num { color: rgba(255,255,255,0.8); }
 .dp-day.disabled {
@@ -101,5 +108,9 @@
 @media (max-width: 768px) {
     .datepicker-dropdown {
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        padding: 12px;
+    }
+    .dp-day {
+        padding: 5px 0;
     }
 }

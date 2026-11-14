@@ -37,7 +37,7 @@ body.font-russoone {
 /* Пиксельный шрифт нужно делать меньше, так как он широкий */
 body.font-pressstart2p { 
     --font-family: 'PressStart2P', monospace; 
-    font-size: calc(12px * var(--font-scale)); 
+    font-size: calc(11px * var(--font-scale)); 
     line-height: 1.4; 
 }
 
@@ -59,6 +59,9 @@ body {
     min-height: 100vh;
     background-attachment: fixed; 
     transition: background 0.3s;
+    /* Защита от вылезания длинных слов */
+    word-break: break-word;
+    overflow-wrap: anywhere; 
 }
 
 .glass-panel {
