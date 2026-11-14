@@ -95,18 +95,55 @@ export function renderSettingsView(container, profile) {
                 <div class="setting-row"><span class="label">Затемнение</span><input type="range" id="bg-darkness" min="0" max="10" value="${settings.bgDarkness || 0}"></div>
                 <div class="setting-row"><span class="label">Размытие</span><input type="range" id="bg-blur" min="0" max="10" value="${settings.bgBlur || 0}"></div>
                 <button id="btn-theme-from-bg" class="btn btn-primary btn-full" style="margin-top: 10px;">✨ Взять цвета с фона</button>
+                <button id="btn-remove-bg" class="btn btn-danger btn-full btn-hold-action btn-hold-long" style="margin-top: 10px;">Удалить фон</button>
             </div></div>
         </div>
 
         <div id="debug-zone-container"></div>
 
-        <button id="btn-reset-settings" class="btn btn-ghost btn-full" style="margin-top: 20px;">Сбросить все настройки</button>
+        <button id="btn-reset-settings" class="btn btn-danger btn-full btn-hold-action btn-hold-long" style="margin-top: 20px;">Сбросить все настройки</button>
     `;
 
     const save = async () => {
         applyUserSettings(currentSettings);
         if (userId) await supabase.from('profiles').update({ settings: currentSettings }).eq('id', userId);
     };
+
+    // Вспомогательная функция для кнопок с удержанием (3 сек)
+    function setupHoldButton(btn, onComplete) {
+        let timer = null;
+        const originalText = btn.textContent;
+
+        const start = (e) => {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            e.preventDefault();
+            btn.classList.add('is-holding');
+            btn.textContent = 'Удерживайте...';
+            
+            timer = setTimeout(() => {
+                btn.classList.remove('is-holding');
+                btn.textContent = originalText;
+                onComplete();
+            }, 3000); // 3 секунды
+        };
+
+        const cancel = () => {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            btn.classList.remove('is-holding');
+            btn.textContent = originalText;
+        };
+
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', cancel);
+        btn.addEventListener('mouseleave', cancel);
+        btn.addEventListener('touchstart', start, { passive: false });
+        btn.addEventListener('touchend', cancel);
+        btn.addEventListener('touchcancel', cancel);
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
 
     // 1. Шрифт
     const fontContainer = container.querySelector('#font-select-container');
@@ -214,9 +251,19 @@ export function renderSettingsView(container, profile) {
         }
     });
 
-    // Сброс
-    container.querySelector('#btn-reset-settings')?.addEventListener('click', async () => {
-        if (!confirm('Сбросить все настройки?')) return;
+    // УДАЛЕНИЕ ФОНА (Удержание 3с)
+    const btnRemoveBg = container.querySelector('#btn-remove-bg');
+    setupHoldButton(btnRemoveBg, async () => {
+        currentSettings.bgUrl = '';
+        container.querySelector('#bg-url').value = '';
+        await save();
+        btnRemoveBg.textContent = 'Фон удален!';
+        setTimeout(() => btnRemoveBg.textContent = 'Удалить фон', 2000);
+    });
+
+    // СБРОС ВСЕХ НАСТРОЕК (Удержание 3с)
+    const btnResetSettings = container.querySelector('#btn-reset-settings');
+    setupHoldButton(btnResetSettings, async () => {
         currentSettings = {
             font: 'minecraft', fontSize: 10, borderRadius: 12,
             useCustomColors: false, colors: { ...defaultColors },

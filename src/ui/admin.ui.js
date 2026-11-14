@@ -33,7 +33,8 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
                     ← На главную
                 </a>
                 
-                <button id="btn-admin-logout" class="btn btn-danger btn-full btn-hold-action">Выйти</button>
+                <!-- ДОБАВЛЕН КЛАСС btn-hold-long -->
+                <button id="btn-admin-logout" class="btn btn-danger btn-full btn-hold-action btn-hold-long">Выйти</button>
             </div>
         </aside>
 
@@ -55,9 +56,10 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
         logoutBtn.classList.add('is-holding');
         logoutBtn.textContent = 'Удерживайте...'; 
         
+        // ИЗМЕНЕНО НА 3000 МС
         logoutTimer = setTimeout(() => {
             onLogout();
-        }, 800); 
+        }, 3000); 
     };
 
     const cancelLogoutHold = () => {

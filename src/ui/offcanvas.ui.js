@@ -103,7 +103,8 @@ export function createOffcanvas(profile) {
                     Газпром колледж Волгоград
                 </a>
                 <div class="app-version">v2.0 | Сборка: ${__BUILD_DATE__}</div>
-                <button id="btn-sidebar-logout" class="btn btn-danger btn-full btn-hold-action">Выйти</button>
+                <!-- ДОБАВЛЕН КЛАСС btn-hold-long -->
+                <button id="btn-sidebar-logout" class="btn btn-danger btn-full btn-hold-action btn-hold-long">Выйти</button>
             </div>
         </div>
 
@@ -278,7 +279,6 @@ export function createOffcanvas(profile) {
         history.pushState({ settingsOpen: true }, '');
     });
 
-    // ИСПРАВЛЕНО: Просто вызываем history.back(), а popstate сам разберется
     offcanvas.querySelector('#btn-back-to-main').addEventListener('click', () => {
         history.back();
     });
@@ -389,10 +389,11 @@ export function createOffcanvas(profile) {
         e.preventDefault(); 
         btnLogout.classList.add('is-holding');
         btnLogout.textContent = 'Удерживайте...';
+        // ИЗМЕНЕНО НА 3000 МС
         logoutTimer = setTimeout(async () => {
             await supabase.auth.signOut();
             window.location.href = `${base}index.html`;
-        }, 800);
+        }, 3000);
     };
 
     const cancelLogoutHold = () => {
