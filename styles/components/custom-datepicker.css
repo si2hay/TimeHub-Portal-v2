@@ -1,7 +1,7 @@
 /**
  * @file styles/components/custom-datepicker.css
  * @description Стили кастомного календаря (createDatepicker).
- * На мобилках календарь открывается по центру экрана поверх оверлея.
+ * Защищен от вылезания за края экрана через max-width.
  */
 
 .custom-datepicker-wrapper { position: relative; width: 100%; min-width: 0; }
@@ -16,37 +16,35 @@
 .datepicker-capsule:hover { border-color: var(--accent-color); }
 
 .datepicker-dropdown {
-    position: absolute; top: 100%; left: 0; width: 280px;
-    background: rgba(20, 22, 26, 0.95) !important; 
+    position: absolute; 
+    top: 100%; 
+    left: 0; 
+    
+    /* ФИКС: Жестко задаем ширину, но не даем вылезти за экран */
+    width: 280px;
+    max-width: calc(100vw - 32px); 
+    
+    background: rgba(20, 22, 26, 0.98) !important; 
     border: 1px solid var(--border-color);
-    border-radius: 8px; margin-top: 5px; z-index: 1000;
-    opacity: 0; visibility: hidden; transform: translateY(-10px);
+    border-radius: 8px; 
+    margin-top: 5px; 
+    z-index: 1000;
+    
+    opacity: 0; 
+    visibility: hidden; 
+    transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    padding: 15px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
-/* Класс для выравнивания по правому краю (вместо инлайн-стилей в JS) */
+/* Класс для выравнивания по правому краю (чтобы не вылезал справа) */
 .datepicker-dropdown.align-right {
     left: auto;
     right: 0;
 }
 
 .datepicker-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
-
-/* Оверлей (затемнение фона) — нужен только на мобилках */
-.datepicker-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    z-index: 9999;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s;
-    pointer-events: none;
-}
-.datepicker-overlay.open {
-    opacity: 1; visibility: visible; pointer-events: auto;
-}
 
 .dp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: var(--text-main); line-height: 1; font-size: calc(15px * var(--font-scale)); }
 .dp-nav-btn { background: transparent; border: none; color: var(--accent-color); cursor: pointer; font-size: calc(16px * var(--font-scale)); padding: 5px; }
@@ -99,37 +97,9 @@
     background: transparent;
 }
 
-/* =========================================
-   МОБИЛЬНЫЙ АДАПТИВ (Календарь по центру)
-   ========================================= */
+/* Чуть уменьшаем тень на мобилках для производительности */
 @media (max-width: 768px) {
     .datepicker-dropdown {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.95);
-        width: 90vw;
-        max-width: 340px;
-        margin-top: 0;
-        z-index: 10000;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-        padding: 20px; /* Чуть больше воздуха для пальцев */
-        border-radius: 12px;
-    }
-    
-    /* Перебиваем выравнивание вправо, чтобы всегда было по центру */
-    .datepicker-dropdown.align-right {
-        left: 50%;
-        right: auto;
-        transform: translate(-50%, -50%) scale(0.95);
-    }
-
-    .datepicker-dropdown.open {
-        transform: translate(-50%, -50%) scale(1);
-    }
-    
-    /* Делаем дни чуть крупнее для удобного тапа */
-    .dp-day {
-        padding: 8px 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 }

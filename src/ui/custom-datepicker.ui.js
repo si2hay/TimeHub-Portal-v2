@@ -1,7 +1,7 @@
 /**
  * @file src/ui/custom-datepicker.ui.js
  * @description Кастомный календарь с номерами учебных недель. Выходные заблокированы.
- * На мобилках открывается как модальное окно по центру.
+ * Убран костыль с оверлеем, используется надежное абсолютное позиционирование.
  */
 import { getWeekForDate } from '../features/date.logic.js';
 
@@ -38,16 +38,11 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     `;
     container.appendChild(uiDiv);
 
-    // Создаем оверлей для мобилок и добавляем его в body
-    const overlay = document.createElement('div');
-    overlay.className = 'datepicker-overlay';
-    document.body.appendChild(overlay);
-
     const capsule = uiDiv.querySelector('.datepicker-capsule');
     const textEl = uiDiv.querySelector('.date-text');
     const dropdown = uiDiv.querySelector('.datepicker-dropdown');
     
-    // ИСПОЛЬЗУЕМ КЛАСС ВМЕСТО ИНЛАЙН-СТИЛЕЙ
+    // Если нужно выровнять вправо (например, в шапке)
     if (align === 'right') {
         dropdown.classList.add('align-right');
     }
@@ -101,7 +96,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             const dateObj = new Date(year, month, i);
             const dateStr = getLocalDateStr(dateObj);
             
-            // ПРОВЕРКА НА ВЫХОДНЫЕ
             const dayOfWeek = dateObj.getDay();
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
@@ -124,7 +118,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         }
         daysContainer.innerHTML = daysHTML;
 
-        // Навешиваем клики ТОЛЬКО на будние дни
         daysContainer.querySelectorAll('.dp-day[data-clickable="true"]').forEach(el => {
             el.addEventListener('click', (e) => {
                 const target = e.target.closest('.dp-day');
@@ -132,7 +125,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
                 selectedDate = new Date(dateStr);
                 hiddenInput.value = dateStr;
                 
-                // ФИКС: Обновляем текст в кнопке при клике
                 textEl.textContent = formatDate(selectedDate);
                 
                 closeDropdown();
@@ -143,7 +135,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     }
 
     const openDropdown = () => {
-        // Закрываем все другие открытые календари и их оверлеи
         document.querySelectorAll('.datepicker-dropdown.open').forEach(d => {
             d.classList.remove('open');
             let p = d.parentElement;
@@ -154,17 +145,14 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
                 p = p.parentElement;
             }
         });
-        document.querySelectorAll('.datepicker-overlay.open').forEach(o => o.classList.remove('open'));
         
         dropdown.classList.add('open');
-        overlay.classList.add('open'); // Включаем оверлей
         toggleParentStyles(true);
         renderCalendar();
     };
 
     const closeDropdown = () => {
         dropdown.classList.remove('open');
-        overlay.classList.remove('open'); // Выключаем оверлей
         toggleParentStyles(false);
     };
 
@@ -186,27 +174,20 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         renderCalendar();
     });
 
-    // Клик по оверлею закрывает календарь
-    overlay.addEventListener('click', () => {
-        closeDropdown();
-    });
-
+    // Закрываем при клике вне календаря
     document.addEventListener('click', (e) => {
-        if (!container.contains(e.target) && !overlay.contains(e.target)) {
+        if (!container.contains(e.target)) {
             closeDropdown();
         }
     });
 
-    // МЕТОД ДЛЯ ВНЕШНЕГО ОБНОВЛЕНИЯ ДАТЫ
+    // Метод для внешнего обновления даты
     container.updateDate = (newDateStr) => {
         if (!newDateStr) return;
         selectedDate = new Date(newDateStr);
         currentDate = new Date(newDateStr);
         hiddenInput.value = newDateStr;
-        
-        // ФИКС: Обновляем текст в кнопке при внешнем апдейте
         textEl.textContent = formatDate(selectedDate);
-        
         renderCalendar();
     };
 
