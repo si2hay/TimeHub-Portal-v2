@@ -23,7 +23,7 @@ export function renderTimer(dayShort = '') {
         <div class="timer-footer">
             <span>Нажми, чтобы раскрыть</span>
             <div class="timer-footer-right">
-                <button class="btn-today-hint" id="btn-today">Сегодня</button>
+                <button class="btn-today-hint" id="btn-today">Ближайший</button>
                 <div class="timer-btn-hint">${dayShort}</div>
             </div>
         </div>
@@ -55,7 +55,7 @@ export function renderTimer(dayShort = '') {
         });
     }
 
-    // Открытие по клику на виджет (но не по кнопке "Сегодня")
+    // Открытие по клику на виджет (но не по кнопке "Ближайший")
     timerDiv.addEventListener('click', (e) => {
         if (e.target.closest('#btn-today')) return;
         fullscreen.classList.add('active');
@@ -89,7 +89,6 @@ export function updateTimerUI(state) {
             timeLabel.textContent = state.status === 'waiting' ? 'До начала:' : 'Осталось:';
             timeValueEl.textContent = state.timeLeft;
         } else {
-            // ИСПОЛЬЗУЕМ visibility ВМЕСТО display, ЧТОБЫ СОХРАНИТЬ МЕСТО
             timeLabel.style.visibility = 'hidden';
             timeValueEl.style.visibility = 'hidden';
         }

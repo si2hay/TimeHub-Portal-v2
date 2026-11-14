@@ -58,9 +58,35 @@ async function initApp() {
         const realWeek = getCurrentWeek();
         const realDateStr = getTodayDateString();
 
-        let weekOffset = 0; 
-        // Если сегодня выходной (6 или 7), показываем расписание на понедельник (1)
-        let selectedDay = realDay > 5 ? 1 : realDay; 
+        // --- УМНАЯ ЛОГИКА ВЫБОРА ДНЯ ---
+        const getSmartViewState = () => {
+            const day = getCurrentDay();
+            const now = getNow();
+            const mins = now.getHours() * 60 + now.getMinutes();
+            
+            // Если сегодня выходной (Сб или Вс) — показываем понедельник следующей недели
+            if (day === 6 || day === 7) return { day: 1, offset: 1 };
+            
+            // Если будний день, проверяем, закончились ли пары
+            const bells = getBellsForGroup(userGroup);
+            const lastBell = bells[bells.length - 1];
+            
+            if (lastBell) {
+                const [h, m] = lastBell.end.split(':').map(Number);
+                if (mins >= h * 60 + m) {
+                    // Если сегодня пятница и пары кончились — показываем понедельник следующей недели
+                    if (day === 5) return { day: 1, offset: 1 };
+                    // Если будний день и пары кончились — показываем завтра
+                    return { day: day + 1, offset: 0 };
+                }
+            }
+            // Пары еще идут или не начались — показываем сегодня
+            return { day: day, offset: 0 };
+        };
+
+        const initialView = getSmartViewState();
+        let weekOffset = initialView.offset; 
+        let selectedDay = initialView.day; 
         
         let currentLessons = [];
         let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
@@ -502,11 +528,12 @@ async function initApp() {
             document.getElementById('timer-container').appendChild(renderTimer(getDayShortRus(selectedDay)));
         }
 
-        // ФИКС: Кнопка "Сегодня" в таймере
+        // ФИКС: Кнопка "Сегодня" теперь использует умную логику
         document.getElementById('btn-today')?.addEventListener('click', (e) => {
-            e.stopPropagation(); // Чтобы не открылся фуллскрин таймера
-            weekOffset = 0;
-            selectedDay = realDay > 5 ? 1 : realDay;
+            e.stopPropagation();
+            const smartView = getSmartViewState();
+            weekOffset = smartView.offset;
+            selectedDay = smartView.day;
             updateHeaderAndCalendar();
             loadWeekData(true);
         });

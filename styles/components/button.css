@@ -105,26 +105,74 @@
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
+    z-index: 1;
     
     /* Базовые цвета (как у btn-danger) */
     background-color: rgba(239, 68, 68, 0.1) !important;
     color: #ef4444 !important;
     border-color: rgba(239, 68, 68, 0.3) !important;
     
-    /* Настройка градиента для волны */
-    background-image: linear-gradient(to top, #ef4444 0%, #ef4444 100%) !important;
-    background-repeat: no-repeat !important;
-    background-position: bottom !important;
-    background-size: 100% 0% !important; /* Изначально высота 0 */
-    transition: background-size 0.15s ease-out, color 0.15s ease-out, border-color 0.15s ease-out !important;
+    transition: color 0.2s ease, border-color 0.2s ease !important;
+}
+
+/* Слой 1: Основная жидкость */
+.btn-hold-action::before {
+    content: '';
+    position: absolute;
+    left: -50%;
+    bottom: -5px; /* Чуть ниже, чтобы при вращении не было зазоров */
+    width: 200%;
+    height: 0%;
+    background: #ef4444;
+    z-index: -1;
+    /* Изогнутый верх для эффекта листка/капли */
+    border-radius: 50% 50% 0 0 / 20px 20px 0 0; 
+    /* Синхронизация с JS (800мс) через linear */
+    transition: height 0.8s linear, border-radius 0.8s ease;
+}
+
+/* Слой 2: Переливающаяся волна (полупрозрачная) */
+.btn-hold-action::after {
+    content: '';
+    position: absolute;
+    left: -50%;
+    bottom: -5px;
+    width: 200%;
+    height: 0%;
+    background: rgba(239, 68, 68, 0.5);
+    z-index: -1;
+    border-radius: 50% 50% 0 0 / 30px 30px 0 0;
+    transition: height 0.8s linear, border-radius 0.8s ease;
 }
 
 /* Когда зажали кнопку */
 .btn-hold-action.is-holding {
-    /* Растягиваем градиент на 100% высоты */
-    background-size: 100% 100% !important;
-    /* Медленная анимация заполнения */
-    transition: background-size 0.8s linear, color 0.15s ease-out, border-color 0.15s ease-out !important;
     color: #ffffff !important;
     border-color: #ef4444 !important;
+}
+
+.btn-hold-action.is-holding::before {
+    height: 150%;
+    /* Края выравниваются, когда кнопка заполняется */
+    border-radius: 0;
+    /* Бесконечное покачивание во время заполнения */
+    animation: liquid-wobble 0.6s infinite alternate ease-in-out;
+}
+
+.btn-hold-action.is-holding::after {
+    height: 150%;
+    border-radius: 0;
+    /* Второй слой колышется с другой скоростью для объема */
+    animation: liquid-wobble-reverse 0.8s infinite alternate ease-in-out;
+}
+
+/* Анимации покачивания жидкости */
+@keyframes liquid-wobble {
+    0% { transform: translateX(-2%) rotate(1.5deg); }
+    100% { transform: translateX(2%) rotate(-1.5deg); }
+}
+
+@keyframes liquid-wobble-reverse {
+    0% { transform: translateX(2%) rotate(-1deg); }
+    100% { transform: translateX(-2%) rotate(1deg); }
 }
