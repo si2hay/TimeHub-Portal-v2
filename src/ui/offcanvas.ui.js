@@ -1,96 +1,14 @@
 /**
  * @file src/ui/offcanvas.ui.js
- * @description Off-canvas меню с аккордеонами для справочника и кастомным калькулятором.
- * Оптимизации: mouse-listeners только на ПК, анимация калькулятора через WAAPI.
- * Модалка "Расписание на 2 недели" показывает мерцающий скелетон вместо текста.
- * Кнопка "Назад" в настройках заменена на стильную SVG-иконку.
+ * @description Off-canvas меню (дирижер). Связывает профиль, калькулятор, консультации, настройки и свайпы.
  */
-import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
-import { getConsultations } from '../api/consultations.api.js';
-import { getScheduleForDay } from '../api/schedule.api.js';
-import { getSubstitutions } from '../api/substitution.api.js';
-import { applySubstitutions } from '../features/substitution.logic.js';
-import { getWeekByOffset, getDateForDayAndWeek } from '../features/date.logic.js';
-import { renderFullSchedule, renderSkeleton } from './schedule.ui.js';
-
-const CONSULT_DAYS = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
-
-// HTML скелетона консультаций (2 карточки-заглушки)
-function renderConsultsSkeleton() {
-    return `
-        <div class="consult-skeleton-list">
-            ${[1, 2].map(() => `
-                <div class="consult-card" style="border-color: transparent;">
-                    <div class="skeleton-block" style="width: 40px; height: 40px; border-radius: 8px;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                        <div class="skeleton-block" style="width: 60%; height: 16px;"></div>
-                        <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-// HTML списка консультаций или пустого состояния
-function renderConsultsList(consults) {
-    if (!consults || consults.length === 0) {
-        return '<div class="admin-placeholder">Пока нет консультаций</div>';
-    }
-    let html = '<div class="consults-list">';
-    consults.forEach(c => {
-        html += `
-            <div class="consult-card">
-                <div class="consult-day">${CONSULT_DAYS[c.day_num] || '?'}</div>
-                <div class="consult-info">
-                    <div class="consult-subject">${c.subject}</div>
-                    <div class="consult-details">
-                        <span>⏰ ${c.time_start} - ${c.time_end}</span>
-                        ${c.room ? `<span>📍 ${c.room}</span>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
-    return html;
-}
-
-// Скелетон для модалки "Расписание на 2 недели"
-function renderFullScheduleSkeleton() {
-    const container = document.createElement('div');
-    container.className = 'full-schedule-container';
-
-    const w1 = document.createElement('h3');
-    w1.className = 'full-schedule-week-title skeleton-block';
-    w1.style.width = '100px';
-    w1.style.height = '24px';
-    w1.style.marginBottom = '15px';
-    w1.style.borderBottom = 'none';
-    container.appendChild(w1);
-
-    const d1 = document.createElement('h4');
-    d1.className = 'full-schedule-day-title skeleton-block';
-    d1.style.width = '80px';
-    d1.style.height = '16px';
-    d1.style.marginBottom = '10px';
-    container.appendChild(d1);
-    
-    container.appendChild(renderSkeleton());
-
-    const d2 = document.createElement('h4');
-    d2.className = 'full-schedule-day-title skeleton-block';
-    d2.style.width = '90px';
-    d2.style.height = '16px';
-    d2.style.marginTop = '20px';
-    d2.style.marginBottom = '10px';
-    container.appendChild(d2);
-    
-    container.appendChild(renderSkeleton());
-
-    return container;
-}
+import { renderCalculator } from './offcanvas/calculator.ui.js';
+import { setupHoldLogout } from './offcanvas/logout.ui.js';
+import { setupSwipeToClose } from './offcanvas/swipe.ui.js';
+import { loadConsults, preloadConsults, applyConsultsToContainer, showConsultsSkeleton } from './offcanvas/consults.ui.js';
+import { renderFullScheduleSkeleton, loadFullScheduleData, renderFullScheduleContent } from './offcanvas/full-schedule.ui.js';
+import { escapeHTML } from '../features/sanitize.utils.js';
 
 export function createOffcanvas(profile) {
     const tg = window.Telegram?.WebApp;
@@ -99,9 +17,6 @@ export function createOffcanvas(profile) {
     const userGroup = profile?.group_name || 'Нет группы';
     const email = profile?.email || 'user@mail.ru';
     const avatarLetter = email.charAt(0).toUpperCase();
-
-    let consultsCache = null;
-    let consultsLoadingPromise = null;
 
     const overlay = document.createElement('div');
     overlay.className = 'offcanvas-overlay';
@@ -121,10 +36,10 @@ export function createOffcanvas(profile) {
             </div>
             <div class="offcanvas-content">
                 <div class="sidebar-user-card">
-                    <div class="sidebar-avatar">${avatarLetter}</div>
-                    <div class="sidebar-email">${email}</div>
-                    <div class="sidebar-group">Группа: ${userGroup}</div>
-                    <div class="sidebar-role">${userRole.toUpperCase()}</div>
+                    <div class="sidebar-avatar">${escapeHTML(avatarLetter)}</div>
+                    <div class="sidebar-email">${escapeHTML(email)}</div>
+                    <div class="sidebar-group">Группа: ${escapeHTML(userGroup)}</div>
+                    <div class="sidebar-role">${escapeHTML(userRole.toUpperCase())}</div>
                 </div>
                 ${(userRole === 'admin' || userRole === 'sap' || userRole === 'starosta') ? `
                     <a href="${base}pages/admin.html" class="btn btn-primary btn-full btn-admin">Перейти в Админ-панель</a>
@@ -135,7 +50,6 @@ export function createOffcanvas(profile) {
                     Расписание на 2 недели
                 </button>
 
-                <!-- СПРАВОЧНИК (АККОРДЕОН) -->
                 <div class="sidebar-section-title">СПРАВОЧНИК</div>
                 <div class="settings-group glass-panel" id="ref-group-calc">
                     <div class="settings-header"><span>Калькулятор оценок</span><span class="arrow">▼</span></div>
@@ -193,17 +107,13 @@ export function createOffcanvas(profile) {
 
         <div class="offcanvas-view" id="view-settings">
             <div class="offcanvas-header">
-                <!-- ФИКС: Новая круглая SVG-кнопка Назад без текста -->
                 <button class="btn-back-settings" id="btn-back-to-main" title="Назад">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                 </button>
-                
                 <h3 style="margin: 0; flex: 1; text-align: center;">Кастомизация</h3>
-                
-                <!-- Пустышка для баланса flexbox -->
                 <div style="width: 40px; flex-shrink: 0;"></div>
             </div>
             <div class="offcanvas-content" id="settings-view-content"></div>
@@ -214,92 +124,9 @@ export function createOffcanvas(profile) {
     document.body.appendChild(offcanvas);
 
     const viewSettings = offcanvas.querySelector('#view-settings');
-    const btnLogout = offcanvas.querySelector('#btn-sidebar-logout');
-    const originalText = 'Выйти';
 
-    // --- ИНИЦИАЛИЗАЦИЯ КАЛЬКУЛЯТОРА ---
-    const calcContainer = offcanvas.querySelector('#calc-container');
-    calcContainer.innerHTML = `
-        <div class="calc-display" id="calc-display"><span class="calc-placeholder">Введи оценки</span></div>
-        <div class="calc-result" id="calc-result">Средний балл: -</div>
-        <div class="calc-keyboard">
-            <button class="calc-btn" data-val="5">5</button>
-            <button class="calc-btn" data-val="4">4</button>
-            <button class="calc-btn" data-val="3">3</button>
-            <button class="calc-btn" data-val="2">2</button>
-            <button class="calc-btn" data-val="1">1</button>
-            <button class="calc-btn calc-btn-action" id="calc-back">⌫</button>
-            <button class="calc-btn calc-btn-bad" data-val="22222">22222</button>
-            <button class="calc-btn calc-btn-action calc-btn-wide" id="calc-clear" style="grid-column: span 2;">Сброс</button>
-        </div>
-    `;
+    offcanvas.querySelector('#calc-container').appendChild(renderCalculator());
 
-    let calcValue = '';
-    let popAnim = null;
-    const display = calcContainer.querySelector('#calc-display');
-    const result = calcContainer.querySelector('#calc-result');
-
-    const updateCalc = () => {
-        if (calcValue) {
-            display.innerHTML = `<span class="calc-numbers">${calcValue}</span>`;
-            display.classList.remove('empty');
-        } else {
-            display.innerHTML = `<span class="calc-placeholder">Введи оценки</span>`;
-            display.classList.add('empty');
-        }
-
-        if (popAnim) popAnim.cancel();
-        popAnim = display.animate(
-            [
-                { transform: 'scale(1)' },
-                { transform: 'scale(1.02)' },
-                { transform: 'scale(1)' }
-            ],
-            { duration: 200, easing: 'ease-out' }
-        );
-        
-        const matches = calcValue.match(/[1-5]/g);
-        if (!matches || matches.length === 0) { 
-            result.textContent = 'Средний балл: -'; 
-            result.classList.remove('has-value');
-            return; 
-        }
-        
-        const grades = matches.map(Number);
-        const avg = grades.reduce((a, b) => a + b, 0) / grades.length;
-        result.textContent = `Средний балл: ${avg.toFixed(2)}`;
-        result.classList.add('has-value');
-    };
-
-    calcContainer.querySelectorAll('.calc-btn[data-val]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (calcValue.length < 40) { calcValue += btn.dataset.val; updateCalc(); }
-        });
-    });
-    calcContainer.querySelector('#calc-back').addEventListener('click', () => { calcValue = calcValue.slice(0, -1); updateCalc(); });
-    calcContainer.querySelector('#calc-clear').addEventListener('click', () => { calcValue = ''; updateCalc(); });
-
-    // --- КОНСУЛЬТАЦИИ: КЕШ + ПРЕДЗАГРУЗКА ---
-    const loadConsults = () => {
-        if (consultsCache !== null) return Promise.resolve(consultsCache);
-        if (consultsLoadingPromise) return consultsLoadingPromise;
-        consultsLoadingPromise = getConsultations().then(data => {
-            consultsCache = data || [];
-            consultsLoadingPromise = null;
-            return consultsCache;
-        }).catch(err => {
-            consultsLoadingPromise = null;
-            throw err;
-        });
-        return consultsLoadingPromise;
-    };
-
-    const applyConsultsToContainer = (container, consults) => {
-        if (!container.isConnected) return;
-        container.innerHTML = renderConsultsList(consults);
-    };
-
-    // --- АККОРДЕОНЫ В ГЛАВНОМ МЕНЮ ---
     const refGroups = offcanvas.querySelectorAll('.settings-group');
     refGroups.forEach(group => {
         const header = group.querySelector('.settings-header');
@@ -314,33 +141,23 @@ export function createOffcanvas(profile) {
                 const container = group.querySelector('#consults-container');
                 if (!container) return;
 
-                if (consultsCache !== null) {
-                    applyConsultsToContainer(container, consultsCache);
-                    return;
-                }
-
                 let skeletonShown = false;
                 const skeletonTimer = setTimeout(() => {
                     skeletonShown = true;
-                    if (container.isConnected) container.innerHTML = renderConsultsSkeleton();
+                    showConsultsSkeleton(container);
                 }, 150);
 
-                loadConsults()
-                    .then(data => {
-                        clearTimeout(skeletonTimer);
-                        if (!container.isConnected) return;
-                        applyConsultsToContainer(container, data);
-                    })
-                    .catch(() => {
-                        clearTimeout(skeletonTimer);
-                        if (!container.isConnected) return;
-                        container.innerHTML = '<div class="admin-placeholder">Не удалось загрузить консультации</div>';
-                    });
+                loadConsults().then(data => {
+                    clearTimeout(skeletonTimer);
+                    applyConsultsToContainer(container, data);
+                }).catch(() => {
+                    clearTimeout(skeletonTimer);
+                    if (container.isConnected) container.innerHTML = '<div class="admin-placeholder">Не удалось загрузить консультации</div>';
+                });
             }
         });
     });
 
-    // --- ЛОГИКА НАВИГАЦИИ ---
     const closeVisuals = () => {
         offcanvas.classList.remove('open');
         overlay.classList.remove('open');
@@ -359,9 +176,7 @@ export function createOffcanvas(profile) {
             tg.BackButton.show();
             tg.BackButton.onClick(() => history.back());
         }
-        if (consultsCache === null && !consultsLoadingPromise) {
-            loadConsults().catch(() => {});
-        }
+        preloadConsults();
     };
 
     const close = () => {
@@ -388,7 +203,6 @@ export function createOffcanvas(profile) {
         history.back();
     });
 
-    // --- МОДАЛЬНЫЕ ОКНА ---
     const showModal = (title, contentHTML) => {
         let modal = document.getElementById('global-modal');
         if (!modal) {
@@ -404,7 +218,7 @@ export function createOffcanvas(profile) {
         modal.innerHTML = `
             <div class="global-modal-content glass-panel">
                 <div class="modal-header">
-                    <h3>${title}</h3>
+                    <h3>${escapeHTML(title)}</h3>
                     <button class="icon-btn" onclick="document.getElementById('global-modal').classList.remove('active')">✖</button>
                 </div>
                 <div class="modal-body">${contentHTML}</div>
@@ -419,115 +233,16 @@ export function createOffcanvas(profile) {
         modalBody.appendChild(renderFullScheduleSkeleton());
 
         try {
-            const weeksData = [];
-            for (let w = 0; w < 2; w++) {
-                const weekNum = getWeekByOffset(w);
-                const days = [];
-                for (let d = 1; d <= 5; d++) {
-                    const targetDate = getDateForDayAndWeek(d, w);
-                    const [lessons, subs] = await Promise.all([
-                        getScheduleForDay(userGroup, weekNum, d),
-                        getSubstitutions(targetDate, userGroup)
-                    ]);
-                    days.push({ dayNum: d, lessons: applySubstitutions(lessons, subs) });
-                }
-                weeksData.push({ weekNum, days });
-            }
-
+            const weeksData = await loadFullScheduleData(userGroup);
             modalBody.innerHTML = '';
-            const finalContent = renderFullSchedule(userGroup, weeksData);
-            finalContent.classList.add('fade-in');
-            modalBody.appendChild(finalContent);
-
+            modalBody.appendChild(renderFullScheduleContent(userGroup, weeksData));
         } catch (err) {
             modalBody.innerHTML = '<div style="color: #ef4444; text-align: center;">Ошибка загрузки расписания.</div>';
         }
     });
 
-    // --- ЛОГИКА СВАЙПА ---
-    let startX = 0, currentX = 0, startTime = 0, isSwiping = false;
-
-    const onDragStart = (e) => {
-        if (!offcanvas.classList.contains('open') || document.querySelector('.global-modal.active')) return;
-        if (e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea')) return;
-        
-        isSwiping = true;
-        startTime = Date.now();
-        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        currentX = startX;
-        offcanvas.style.transition = 'none';
-        overlay.style.transition = 'none';
-        offcanvas.style.userSelect = 'none';
-    };
-
-    const onDragMove = (e) => {
-        if (!isSwiping) return;
-        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const diff = currentX - startX;
-        if (diff < 0) {
-            offcanvas.style.transform = `translateX(${diff}px)`;
-            const opacity = 1 - (Math.abs(diff) / offcanvas.offsetWidth);
-            overlay.style.opacity = Math.max(0, opacity);
-        }
-    };
-
-    const onDragEnd = () => {
-        if (!isSwiping) return;
-        isSwiping = false;
-        const diff = currentX - startX;
-        const time = Date.now() - startTime;
-        offcanvas.style.transition = ''; 
-        overlay.style.transition = '';
-        offcanvas.style.userSelect = '';
-        if ((time < 250 && diff < -30) || diff < -(offcanvas.offsetWidth * 0.15)) {
-            close(); 
-        } else {
-            offcanvas.style.transform = '';
-            overlay.style.opacity = '';
-        }
-    };
-
-    const isPointerFine = window.matchMedia('(pointer: fine)').matches;
-
-    offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
-    offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
-    offcanvas.addEventListener('touchend', onDragEnd);
-
-    if (isPointerFine) {
-        offcanvas.addEventListener('mousedown', onDragStart);
-        window.addEventListener('mousemove', onDragMove);
-        window.addEventListener('mouseup', onDragEnd);
-    }
-
-    // --- LONG PRESS (ВОЛНА) ---
-    let logoutTimer = null;
-    const startLogoutHold = (e) => {
-        if (e.type === 'mousedown' && e.button !== 0) return; 
-        e.preventDefault(); 
-        btnLogout.classList.add('is-holding');
-        btnLogout.textContent = 'Удерживайте...';
-        logoutTimer = setTimeout(async () => {
-            await supabase.auth.signOut();
-            window.location.href = `${base}index.html`;
-        }, 3000);
-    };
-
-    const cancelLogoutHold = () => {
-        if (logoutTimer) {
-            clearTimeout(logoutTimer);
-            logoutTimer = null;
-        }
-        btnLogout.classList.remove('is-holding');
-        btnLogout.textContent = originalText;
-    };
-
-    btnLogout.addEventListener('mousedown', startLogoutHold);
-    btnLogout.addEventListener('mouseup', cancelLogoutHold);
-    btnLogout.addEventListener('mouseleave', cancelLogoutHold);
-    btnLogout.addEventListener('touchstart', startLogoutHold, { passive: false });
-    btnLogout.addEventListener('touchend', cancelLogoutHold);
-    btnLogout.addEventListener('touchcancel', cancelLogoutHold);
-    btnLogout.addEventListener('contextmenu', (e) => e.preventDefault());
+    setupSwipeToClose(offcanvas, overlay, close);
+    setupHoldLogout(offcanvas.querySelector('#btn-sidebar-logout'), base);
 
     overlay.addEventListener('click', close);
     offcanvas.querySelector('#btn-close-sidebar').addEventListener('click', close);

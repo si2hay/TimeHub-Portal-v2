@@ -5,7 +5,7 @@
  */
 import { supabase } from '../api/supabase-client.js';
 import { GROUPS } from '../constants/groups.js';
-import { initParticles } from '../features/particles.logic.js';
+import { initParticles } from '../ui/particles.ui.js';
 import { smartSearch } from '../features/search.logic.js';
 import { initTransitions } from '../ui/transitions.ui.js';
 

@@ -5,9 +5,9 @@
 import { getScheduleForDay, saveDaySchedule } from '../../api/schedule.api.js';
 import { renderScheduleEditor, renderLessonsList } from '../../ui/admin-schedule.ui.js';
 
-export function initScheduleTab(contentArea) {
+export function initScheduleTab(contentArea, profile) {
     contentArea.innerHTML = '';
-    const editor = renderScheduleEditor();
+    const editor = renderScheduleEditor(profile);
     contentArea.appendChild(editor);
 
     const btnLoad = editor.querySelector('#btn-load-schedule');

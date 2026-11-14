@@ -5,6 +5,7 @@
 import { GROUPS } from '../constants/groups.js';
 import { DICTIONARY, ALL_SUBJECTS, ALL_TEACHERS, ALL_ROOMS } from '../constants/dictionary.js';
 import { createSearchableSelect } from './custom-select.ui.js';
+import { escapeHTML } from '../features/sanitize.utils.js';
 
 function setupTimeInput(input, nextInput = null) {
     input.type = 'text';
@@ -24,12 +25,16 @@ function setupTimeInput(input, nextInput = null) {
     });
 }
 
-export function renderScheduleEditor() {
+export function renderScheduleEditor(profile) {
     const container = document.createElement('div');
     container.className = 'admin-editor';
 
     const weeks = ['1 неделя', '2 неделя'];
     const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница'];
+
+    const availableGroups = (profile?.role === 'starosta' && profile?.group_name) 
+        ? [profile.group_name] 
+        : GROUPS;
 
     container.innerHTML = `
         <datalist id="dl-subjects">${ALL_SUBJECTS.map(s => `<option value="${s}">`).join('')}</datalist>
@@ -51,7 +56,7 @@ export function renderScheduleEditor() {
     `;
 
     const groupContainer = container.querySelector('#schedule-group-container');
-    const groupSelect = createSearchableSelect(GROUPS, GROUPS[0], 'Группа', 'edit-group');
+    const groupSelect = createSearchableSelect(availableGroups, availableGroups[0], 'Группа', 'edit-group');
     groupContainer.appendChild(groupSelect);
 
     const weekContainer = container.querySelector('#schedule-week-container');
@@ -84,12 +89,12 @@ export function renderLessonsList(lessons, onChange) {
             row.className = 'sub-edit-row';
             
             row.innerHTML = `
-                <input type="number" class="admin-input pair-input" value="${lesson.pair_num}" min="1" max="7" title="Измени номер для сдвига">
-                <input type="text" class="admin-input sub-subject" list="dl-subjects" value="${lesson.subject || ''}" placeholder="Предмет">
-                <input type="text" class="admin-input sub-room" list="dl-rooms" value="${lesson.room || ''}" placeholder="Кабинет">
-                <input type="text" class="admin-input sub-teacher" list="dl-teachers" value="${lesson.teacher || ''}" placeholder="Преподаватель">
-                <input type="text" class="admin-input sub-time-start" value="${lesson.custom_start || ''}" title="Свое время (начало)">
-                <input type="text" class="admin-input sub-time-end" value="${lesson.custom_end || ''}" title="Свое время (конец)">
+                <input type="number" class="admin-input pair-input" value="${escapeHTML(lesson.pair_num)}" min="1" max="7" title="Измени номер для сдвига">
+                <input type="text" class="admin-input sub-subject" list="dl-subjects" value="${escapeHTML(lesson.subject || '')}" placeholder="Предмет">
+                <input type="text" class="admin-input sub-room" list="dl-rooms" value="${escapeHTML(lesson.room || '')}" placeholder="Кабинет">
+                <input type="text" class="admin-input sub-teacher" list="dl-teachers" value="${escapeHTML(lesson.teacher || '')}" placeholder="Преподаватель">
+                <input type="text" class="admin-input sub-time-start" value="${escapeHTML(lesson.custom_start || '')}" title="Свое время (начало)">
+                <input type="text" class="admin-input sub-time-end" value="${escapeHTML(lesson.custom_end || '')}" title="Свое время (конец)">
                 <button class="btn btn-danger btn-icon btn-del-sub" title="Удалить">✖</button>
             `;
 

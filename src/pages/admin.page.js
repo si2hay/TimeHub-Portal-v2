@@ -4,7 +4,7 @@
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
 import { cleanOldSubstitutions } from '../api/substitution.api.js'; 
-import { applyUserSettings } from '../features/settings.logic.js';
+import { applyUserSettings } from '../ui/settings.ui.js';
 import { renderAdminLayout } from '../ui/admin.ui.js';
 import { initScheduleTab } from './admin/schedule.admin.js';
 import { initSubstitutionTab } from './admin/substitution.admin.js';
@@ -13,12 +13,11 @@ import { initUsersTab } from './admin/users.admin.js';
 import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initAdminPanel() {
-    initTransitions(); // Инициализация плавных переходов
+    initTransitions();
 
     const appDiv = document.getElementById('admin-app');
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Проверка прав...</div>';
 
-    // Ждём восстановления сессии
     supabase.auth.onAuthStateChange(async (event, session) => {
         if (event !== 'INITIAL_SESSION') return;
 
@@ -64,8 +63,8 @@ async function initAdminPanel() {
             contentArea.offsetHeight;
             contentArea.style.animation = 'fadeInUp 0.3s ease forwards';
 
-            if (target === 'schedule') initScheduleTab(contentArea);
-            if (target === 'substitutions') initSubstitutionTab(contentArea);
+            if (target === 'schedule') initScheduleTab(contentArea, profile);
+            if (target === 'substitutions') initSubstitutionTab(contentArea, profile);
             if (target === 'consultations') initConsultationsTab(contentArea);
             if (target === 'users' && allowedRoles.includes(profile.role) && profile.role !== 'starosta') {
                 initUsersTab(contentArea);

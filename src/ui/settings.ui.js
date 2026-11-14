@@ -1,44 +1,15 @@
 /**
- * @file src/features/settings.logic.js
- * @description Применение настроек (цвета, шрифты, фон, умный контраст, темы, частицы).
+ * @file src/ui/settings.ui.js
+ * @description Применение настроек (цвета, шрифты, фон, темы, частицы).
  */
-import { initParticles, destroyParticles } from './particles.logic.js';
-
-function getContrastColor(hex) {
-    if (!hex || !hex.startsWith('#')) return '#ffffff';
-    const r = parseInt(hex.substr(1, 2), 16);
-    const g = parseInt(hex.substr(3, 2), 16);
-    const b = parseInt(hex.substr(5, 2), 16);
-    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-    return (yiq >= 128) ? '#000000' : '#ffffff';
-}
-
-function shadeColor(hex, percent) {
-    if (!hex || !hex.startsWith('#')) return hex;
-    const num = parseInt(hex.replace('#', ''), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = Math.min(255, Math.max(0, (num >> 16) + amt));
-    const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
-    const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
-    return '#' + (1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1);
-}
-
-function hexToRgba(hex, alpha) {
-    if (!hex || !hex.startsWith('#')) return hex;
-    const num = parseInt(hex.replace('#', ''), 16);
-    const r = num >> 16;
-    const g = (num >> 8) & 255;
-    const b = num & 255;
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+import { initParticles, destroyParticles } from './particles.ui.js';
+import { getContrastColor, shadeColor, hexToRgba } from '../features/color.utils.js';
 
 export function applyUserSettings(settings) {
     if (!settings) return;
 
-    // Убираем все возможные классы шрифтов
     document.body.classList.remove('font-russoone', 'font-pressstart2p', 'font-tiny5duo', 'theme-glass', 'theme-classic');
 
-    // Устанавливаем шрифт. Если старый 'minecraft', принудительно меняем на 'russoone'
     let fontKey = settings.font || 'russoone';
     if (fontKey === 'minecraft') fontKey = 'russoone';
     document.body.classList.add(`font-${fontKey}`);
@@ -72,9 +43,7 @@ export function applyUserSettings(settings) {
             }
         }
 
-        if (cc.bg) {
-            root.style.setProperty('--bg-color', cc.bg);
-        }
+        if (cc.bg) root.style.setProperty('--bg-color', cc.bg);
     } else {
         root.style.removeProperty('--accent-color');
         root.style.removeProperty('--accent-text');

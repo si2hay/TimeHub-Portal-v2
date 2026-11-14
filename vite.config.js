@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-export default defineConfig({
-  base: '/TimeHub-Portal-v2/',
+export default defineConfig(({ command }) => ({
+  // При сборке используем твой путь для GitHub Pages. Локально — корень.
+  base: command === 'build' ? '/TimeHub-Portal-v2/' : '/',
+  
   define: {
-    // Вшиваем дату сборки при каждом билде (с указанием Волгоградского времени)
     __BUILD_DATE__: JSON.stringify(new Date().toLocaleString('ru-RU', { 
         day: '2-digit', 
         month: '2-digit', 
@@ -28,4 +29,4 @@ export default defineConfig({
     port: 3000,
     cors: true
   }
-});
+}));

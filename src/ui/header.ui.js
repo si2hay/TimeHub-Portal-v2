@@ -1,9 +1,11 @@
 /**
  * @file src/ui/header.ui.js
  * @description Шапка приложения с кликабельной датой и красивым стриком.
+ * Логотип импортируется из src/assets — путь корректно разрешается Vite при сборке.
  */
 import { createOffcanvas } from './offcanvas.ui.js';
 import { createDatepicker } from './custom-datepicker.ui.js';
+import logoUrl from '../assets/logo.png';
 
 function getStreakText(n) {
     const lastDigit = n % 10;
@@ -28,7 +30,7 @@ export function createHeader(dateString, initialDate, profile, onDateChange, isS
     header.innerHTML = `
         <div class="header-left">
             <div class="header-logo" id="logo-trigger">
-                <img src="${base}logo.png" alt="TH" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <img src="${logoUrl}" alt="TH" class="logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="logo-fallback" style="display: none;">TH</div>
                 <div class="logo-text">
                     <h1>TimeHub</h1>
@@ -80,7 +82,6 @@ export function createHeader(dateString, initialDate, profile, onDateChange, isS
     });
 
     const dateWrapper = header.querySelector('#header-date-wrapper');
-    // ФИКС: Передаем initialDate вместо getTodayDateString
     const dp = createDatepicker(initialDate, (newDate) => {
         if (onDateChange) onDateChange(newDate);
     }, 'header-date-picker', 'right');

@@ -1,8 +1,29 @@
 /**
  * @file src/ui/custom-select.ui.js
  * @description Кастомный выпадающий список с умным поиском.
+ * Использует глобальный обработчик клика, чтобы не плодить утечки памяти.
  */
 import { smartSearch } from '../features/search.logic.js';
+
+// Глобальный слушатель, который закрывает открытые селекты при клике вне их
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.custom-select-wrapper.open').forEach(wrapper => {
+        if (!wrapper.contains(e.target)) {
+            wrapper.classList.remove('open');
+            const dropdown = wrapper.querySelector('.custom-dropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            
+            // Снимаем allow-overflow с родителей
+            let el = wrapper.parentElement;
+            while (el) {
+                if (el.classList.contains('settings-group') || el.classList.contains('settings-inner') || el.classList.contains('settings-content')) {
+                    el.classList.remove('allow-overflow');
+                }
+                el = el.parentElement;
+            }
+        }
+    });
+});
 
 export function createSearchableSelect(options, currentValue, placeholder, hiddenSelectId, onSelect = null) {
     const wrapper = document.createElement('div');
@@ -79,15 +100,18 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
 
     const openDropdown = () => {
         // Закрываем другие дропдауны
-        document.querySelectorAll('.custom-dropdown.open').forEach(d => {
-            d.classList.remove('open');
-            d.closest('.custom-select-wrapper')?.classList.remove('open');
-            let parent = d.parentElement;
-            while (parent) {
-                if (parent.classList.contains('settings-group') || parent.classList.contains('settings-inner') || parent.classList.contains('settings-content')) {
-                    parent.classList.remove('allow-overflow');
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+            if (w !== wrapper) {
+                w.classList.remove('open');
+                const d = w.querySelector('.custom-dropdown');
+                if (d) d.classList.remove('open');
+                let parent = w.parentElement;
+                while (parent) {
+                    if (parent.classList.contains('settings-group') || parent.classList.contains('settings-inner') || parent.classList.contains('settings-content')) {
+                        parent.classList.remove('allow-overflow');
+                    }
+                    parent = parent.parentElement;
                 }
-                parent = parent.parentElement;
             }
         });
 
@@ -95,8 +119,7 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
         wrapper.classList.add('open');
         toggleParentStyles(true);
         
-        // ФИКС: На мобилках не открываем клавиатуру автоматически (чтобы не дёргалось)
-        // На ПК фокусим, но с preventScroll (чтобы не сдвигался контент)
+        // На мобилках не открываем клавиатуру автоматически
         const isMobile = window.matchMedia('(pointer: coarse)').matches;
         if (!isMobile) {
             searchInput.focus({ preventScroll: true });
@@ -121,12 +144,6 @@ export function createSearchableSelect(options, currentValue, placeholder, hidde
     });
 
     searchInput.addEventListener('input', (e) => renderOptions(e.target.value));
-
-    document.addEventListener('click', (e) => {
-        if (!wrapper.contains(e.target)) {
-            closeDropdown();
-        }
-    });
 
     renderOptions();
     return wrapper;

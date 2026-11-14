@@ -6,6 +6,7 @@ import { getAllUsers, updateUserProfile } from '../../api/users.api.js';
 import { GROUPS } from '../../constants/groups.js';
 import { createSearchableSelect } from '../../ui/custom-select.ui.js';
 import { smartSearch } from '../../features/search.logic.js';
+import { escapeHTML } from '../../features/sanitize.utils.js';
 
 const ROLES = ['Студент', 'Староста', 'SAP', 'Админ'];
 const roleMap = { 'Студент': 'student', 'Староста': 'starosta', 'SAP': 'sap', 'Админ': 'admin' };
@@ -50,9 +51,9 @@ export async function initUsersTab(contentArea) {
             card.className = 'user-admin-card';
             card.innerHTML = `
                 <div class="user-admin-info">
-                    <div class="user-admin-avatar">${initial}</div>
+                    <div class="user-admin-avatar">${escapeHTML(initial)}</div>
                     <div>
-                        <div class="user-admin-email">${email}</div>
+                        <div class="user-admin-email">${escapeHTML(email)}</div>
                         <div class="user-admin-id">ID: ${u.id.substring(0, 8)}...</div>
                     </div>
                 </div>

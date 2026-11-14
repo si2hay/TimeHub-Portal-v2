@@ -1,9 +1,27 @@
 /**
  * @file src/ui/custom-datepicker.ui.js
- * @description Кастомный календарь с номерами учебных недель. Выходные заблокированы.
- * Убран костыль с оверлеем, используется надежное абсолютное позиционирование.
+ * @description Кастомный календарь с номерами учебных недель.
+ * Использует глобальный обработчик клика для предотвращения утечек памяти.
  */
 import { getWeekForDate } from '../features/date.logic.js';
+
+// Глобальный слушатель для закрытия календарей
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.datepicker-dropdown.open').forEach(dropdown => {
+        const wrapper = dropdown.closest('.custom-datepicker-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            dropdown.classList.remove('open');
+            // Снимаем allow-overflow
+            let p = wrapper.parentElement;
+            while (p) {
+                if (p.classList.contains('settings-group') || p.classList.contains('settings-inner') || p.classList.contains('settings-content')) {
+                    p.classList.remove('allow-overflow');
+                }
+                p = p.parentElement;
+            }
+        }
+    });
+});
 
 export function createDatepicker(initialDate, onChange, inputId = 'custom-date-input', align = 'left') {
     const container = document.createElement('div');
@@ -42,10 +60,7 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
     const textEl = uiDiv.querySelector('.date-text');
     const dropdown = uiDiv.querySelector('.datepicker-dropdown');
     
-    // Если нужно выровнять вправо (например, в шапке)
-    if (align === 'right') {
-        dropdown.classList.add('align-right');
-    }
+    if (align === 'right') dropdown.classList.add('align-right');
 
     const toggleParentStyles = (isOpen) => {
         let el = container.parentElement;
@@ -136,13 +151,15 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
 
     const openDropdown = () => {
         document.querySelectorAll('.datepicker-dropdown.open').forEach(d => {
-            d.classList.remove('open');
-            let p = d.parentElement;
-            while (p) {
-                if (p.classList.contains('settings-group') || p.classList.contains('settings-inner') || p.classList.contains('settings-content')) {
-                    p.classList.remove('allow-overflow');
+            if (d !== dropdown) {
+                d.classList.remove('open');
+                let p = d.parentElement;
+                while (p) {
+                    if (p.classList.contains('settings-group') || p.classList.contains('settings-inner') || p.classList.contains('settings-content')) {
+                        p.classList.remove('allow-overflow');
+                    }
+                    p = p.parentElement;
                 }
-                p = p.parentElement;
             }
         });
         
@@ -174,14 +191,6 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         renderCalendar();
     });
 
-    // Закрываем при клике вне календаря
-    document.addEventListener('click', (e) => {
-        if (!container.contains(e.target)) {
-            closeDropdown();
-        }
-    });
-
-    // Метод для внешнего обновления даты
     container.updateDate = (newDateStr) => {
         if (!newDateStr) return;
         selectedDate = new Date(newDateStr);

@@ -1,28 +1,26 @@
 /**
  * @file src/pages/app.page.js
- * @description Главная страница приложения. ПК-версия разделена на две колонки.
- * Оптимизации: will-change только на время свайпа, скелетон с задержкой 200мс,
- * таймер останавливается при скрытой вкладке (не жрёт CPU в фоне).
+ * @description Главная страница приложения. Дирижер: связывает API, Features и UI.
  */
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
-import { getScheduleForDay } from '../api/schedule.api.js';
-import { getSubstitutions } from '../api/substitution.api.js';
 import { 
     getCurrentWeek, getCurrentDay, getTodayDateString, formatDateRus,
     getWeekByOffset, getDayNameRus, getDayNameRusAccusative, getDayShortRus,
     getDateForDayAndWeek, getNow
 } from '../features/date.logic.js';
-import { getWeather, getWeatherSVG, getClothingAdvice } from '../api/weather.api.js';
+import { getSmartViewState } from '../features/smart-view.logic.js';
 import { getTimerState } from '../features/timer.logic.js';
 import { getBellsForGroup } from '../features/bells.logic.js';
-import { applySubstitutions } from '../features/substitution.logic.js';
-import { applyUserSettings } from '../features/settings.logic.js';
+import { applyUserSettings } from '../ui/settings.ui.js';
 import { updateStreak } from '../features/streak.logic.js'; 
 import { createHeader } from '../ui/header.ui.js';
 import { renderSchedule, renderSkeleton } from '../ui/schedule.ui.js';
 import { renderTimer, updateTimerUI } from '../ui/timer.ui.js';
 import { initTransitions } from '../ui/transitions.ui.js';
+import { renderAppLayout } from '../ui/app-layout.ui.js';
+import { loadWeatherWidget } from '../ui/weather-widget.ui.js';
+import { createScheduleStore } from './app/schedule.store.js';
 
 async function initApp() {
     initTransitions();
@@ -63,41 +61,23 @@ async function initApp() {
         const realWeek = getCurrentWeek();
         const realDateStr = getTodayDateString();
 
-        // --- УМНАЯ ЛОГИКА ВЫБОРА ДНЯ ---
-        const getSmartViewState = () => {
-            const day = getCurrentDay();
-            const now = getNow();
-            const mins = now.getHours() * 60 + now.getMinutes();
-            
-            if (day === 6 || day === 7) return { day: 1, offset: 1 };
-            
-            const bells = getBellsForGroup(userGroup);
-            const lastBell = bells[bells.length - 1];
-            
-            if (lastBell) {
-                const [h, m] = lastBell.end.split(':').map(Number);
-                if (mins >= h * 60 + m) {
-                    if (day === 5) return { day: 1, offset: 1 };
-                    return { day: day + 1, offset: 0 };
-                }
-            }
-            return { day: day, offset: 0 };
-        };
-
-        const initialView = getSmartViewState();
+        const initialView = getSmartViewState(userGroup);
         let weekOffset = initialView.offset; 
         let selectedDay = initialView.day; 
         
         let currentLessons = [];
         let weatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
-        let cache = {};
+        
+        const scheduleStore = createScheduleStore(userGroup);
 
-        // ФОРМАТ ДЛЯ ШАПКИ
+        // Рендерим каркас
+        renderAppLayout(realWeek, formatDateRus(realDateStr));
+
+        // Формат для шапки
         const getHeaderDateString = () => {
             const realStr = `${getDayNameRus(realDay)}, ${formatDateRus(realDateStr)}`;
             const targetDate = getDateForDayAndWeek(selectedDay, weekOffset);
             const targetStr = `${getDayNameRus(selectedDay)}, ${formatDateRus(targetDate)}`;
-
             return `Сегодня: ${realStr}<br><span style="font-size: 10px; opacity: 0.7; font-weight: normal;">Выбран: ${targetStr}</span>`;
         };
 
@@ -135,70 +115,10 @@ async function initApp() {
             loadWeekData(true);
         };
 
-        appDiv.innerHTML = `
-            <div id="header-container"></div>
-            <main class="app-main">
-                <div class="desktop-layout">
-                    
-                    <!-- ЛЕВАЯ КОЛОНКА -->
-                    <aside class="desktop-sidebar">
-                        <div class="glass-panel dashboard-widget">
-                            <div class="widget-header">
-                                <button id="btn-prev-week" class="icon-btn">◀</button>
-                                <div class="week-label-wrapper">
-                                    <span id="week-label" class="week-label">1 неделя</span>
-                                </div>
-                                <button id="btn-next-week" class="icon-btn">▶</button>
-                            </div>
-
-                            <div class="widget-body">
-                                <div id="weather-content" class="weather-content">
-                                    <span style="opacity:0.5;">Загрузка...</span>
-                                </div>
-                                <div id="clothing-advice" class="clothing-advice">
-                                    Совет: ...
-                                </div>
-                            </div>
-
-                            <div class="widget-footer">
-                                Сейчас идет: <strong>${realWeek} неделя</strong>
-                                <span class="current-date-label">(${formatDateRus(realDateStr)})</span>
-                            </div>
-                        </div>
-
-                        <div id="timer-container"></div>
-                    </aside>
-
-                    <!-- ПРАВАЯ КОЛОНКА -->
-                    <section class="desktop-content">
-                        <div class="schedule-viewport" id="schedule-viewport">
-                            <div class="schedule-content-wrap" id="schedule-content"></div>
-                        </div>
-                        <div class="schedule-dots" id="schedule-dots"></div>
-                    </section>
-                    
-                </div>
-
-                <footer class="app-footer">
-                    <div class="footer-content">
-                        <p class="footer-info">
-                            Заполнение расписаний и замен для своей группы выполняется старостой вручную через удобный билдер. 
-                            Чтобы стать старостой, обратитесь в <a href="https://t.me/+sq9RDqa2I2A3M2Iy" target="_blank">наш Telegram-чат</a>.
-                        </p>
-                        <p class="footer-thanks">
-                            Авторы проекта будут благодарны за любую поддержку и идеи ☕
-                        </p>
-                    </div>
-                </footer>
-            </main>
-        `;
-
-        // ФИКС: Передаем правильную целевую дату при создании шапки
+        // Создаём шапку
         const initialTargetDate = getDateForDayAndWeek(selectedDay, weekOffset);
         const header = createHeader(getHeaderDateString(), initialTargetDate, profile, handleDateChange, isUpdated);
         document.getElementById('header-container').appendChild(header);
-
-        // ФИКС: Принудительно синхронизируем календарь сразу после рендера
         updateHeaderAndCalendar();
 
         const contentEl = document.getElementById('schedule-content');
@@ -220,20 +140,31 @@ async function initApp() {
             return `${m} мин`;
         }
 
-        function renderDots() {
+        // Рендер точек (оптимизированный)
+        function initDots() {
             dotsContainer.innerHTML = '';
             for (let i = 1; i <= 5; i++) {
                 const dot = document.createElement('div');
                 dot.className = 'schedule-dot';
-                if (i === selectedDay) dot.classList.add('active');
+                dot.dataset.day = i;
                 dot.addEventListener('click', () => jumpToDay(i));
                 dotsContainer.appendChild(dot);
             }
         }
 
+        function updateDotsActive() {
+            dotsContainer.querySelectorAll('.schedule-dot').forEach(dot => {
+                if (Number(dot.dataset.day) === selectedDay) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
         function updateContent(direction = 0) {
             const w = getWeekByOffset(weekOffset);
-            const dataCenter = cache[w]?.[selectedDay] || [];
+            const dataCenter = scheduleStore.get(w, selectedDay) || [];
 
             const startHeight = contentEl.offsetHeight;
             
@@ -247,7 +178,7 @@ async function initApp() {
 
             currentLessons = dataCenter;
             updateTimer();
-            renderDots();
+            updateDotsActive();
 
             const hintEl = document.querySelector('.timer-btn-hint');
             if (hintEl) hintEl.textContent = getDayShortRus(selectedDay);
@@ -287,7 +218,6 @@ async function initApp() {
                 updateHeaderAndCalendar();
                 updateContent(direction);
                 isAnimating = false;
-                // Снимаем will-change после того, как новая разметка отрисована
                 setTimeout(() => contentEl.classList.remove('is-animating'), 50);
             }, 100);
         }
@@ -298,11 +228,8 @@ async function initApp() {
             commitSwipe(day, dir);
         }
 
-        let startX = 0;
-        let startY = 0;
-        let currentX = 0;
-        let currentY = 0;
-        let isDragging = false;
+        // --- СВАЙПЫ ---
+        let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false;
         const threshold = 60;
 
         const onDragStart = (e) => {
@@ -310,25 +237,20 @@ async function initApp() {
             isDragging = true;
             contentEl.classList.add('is-animating');
             if (e.type.includes('mouse')) {
-                startX = e.clientX;
-                startY = e.clientY;
+                startX = e.clientX; startY = e.clientY;
             } else {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY;
             }
-            currentX = startX;
-            currentY = startY;
+            currentX = startX; currentY = startY;
         };
 
         const onDragMove = (e) => {
             if (!isDragging || isAnimating) return;
             
             if (e.type.includes('mouse')) {
-                currentX = e.clientX;
-                currentY = e.clientY;
+                currentX = e.clientX; currentY = e.clientY;
             } else {
-                currentX = e.touches[0].clientX;
-                currentY = e.touches[0].clientY;
+                currentX = e.touches[0].clientX; currentY = e.touches[0].clientY;
             }
 
             const diffX = currentX - startX;
@@ -375,13 +297,12 @@ async function initApp() {
         viewport.addEventListener('touchmove', onDragMove, { passive: false });
         window.addEventListener('touchend', onDragEnd);
 
+        // --- ЗАГРУЗКА НЕДЕЛИ ---
         async function loadWeekData(animateDown = false) {
             const currentWeekNum = getWeekByOffset(weekOffset);
-            if (weekLabelEl) {
-                weekLabelEl.textContent = `${currentWeekNum} неделя`;
-            }
+            if (weekLabelEl) weekLabelEl.textContent = `${currentWeekNum} неделя`;
 
-            if (cache[currentWeekNum]) {
+            if (scheduleStore.hasWeek(currentWeekNum)) {
                 if (animateDown) {
                     viewport.classList.remove('anim-slide-down');
                     void viewport.offsetWidth;
@@ -391,33 +312,13 @@ async function initApp() {
                 return;
             }
 
-            // Скелетон показываем только если загрузка длится > 200 мс.
-            // Если данные пришли быстро — пользователь не увидит «вспышку».
             const skeletonTimer = setTimeout(() => {
                 contentEl.innerHTML = '';
                 contentEl.appendChild(renderSkeleton());
             }, 200);
 
-            const promises = [];
-            for (let d = 1; d <= 5; d++) {
-                const targetDate = getDateForDayAndWeek(d, weekOffset);
-                promises.push(
-                    Promise.all([
-                        getScheduleForDay(userGroup, currentWeekNum, d),
-                        getSubstitutions(targetDate, userGroup)
-                    ]).then(([lessons, subs]) => {
-                        return { day: d, data: applySubstitutions(lessons, subs) };
-                    })
-                );
-            }
-
-            const results = await Promise.all(promises);
+            await scheduleStore.loadWeek(currentWeekNum, weekOffset);
             clearTimeout(skeletonTimer);
-
-            cache[currentWeekNum] = {};
-            results.forEach(res => {
-                cache[currentWeekNum][res.day] = res.data;
-            });
 
             if (animateDown) {
                 viewport.classList.remove('anim-slide-down');
@@ -463,7 +364,7 @@ async function initApp() {
                 }
 
                 const w = getWeekByOffset(searchWeekOffset);
-                const lessons = cache[w]?.[searchDay] || [];
+                const lessons = scheduleStore.get(w, searchDay) || [];
                 
                 if (i === 0 && diffDays === 0 && lessons.length === 0) continue;
 
@@ -506,8 +407,7 @@ async function initApp() {
             });
         };
 
-        // Пауза таймера при скрытой вкладке. На слабом телефоне это экономит
-        // батарею и CPU — а при возврате сразу пересчитывает и продолжает.
+        // Пауза таймера при скрытой вкладке
         let timerIntervalId = null;
         const startTimer = () => {
             if (timerIntervalId) return;
@@ -523,13 +423,14 @@ async function initApp() {
             if (document.hidden) {
                 stopTimer();
             } else {
-                updateTimer(); // сразу обновить, чтобы цифры не «застыли»
+                updateTimer();
                 startTimer();
             }
         };
         document.addEventListener('visibilitychange', onVisibilityChange);
         startTimer();
 
+        // Переключение недель
         document.getElementById('btn-prev-week').addEventListener('click', () => {
             weekOffset -= 1;
             updateHeaderAndCalendar();
@@ -542,45 +443,26 @@ async function initApp() {
             loadWeekData(true); 
         });
 
-        async function loadWeather() {
-            const widget = document.getElementById('weather-content');
-            const adviceWidget = document.getElementById('clothing-advice');
-            if (!widget) return;
-            
-            widget.innerHTML = '<span style="opacity:0.5;">Загрузка...</span>';
-            const data = await getWeather(weatherProvider);
-            
-            if (data) {
-                const icon = getWeatherSVG(data.condition);
-                widget.innerHTML = `
-                    ${icon}
-                    <span style="font-weight:bold; font-size: 16px;">${data.temp}°C</span>
-                    <span style="color: var(--text-muted); font-size: 12px;">ветер ${data.wind} м/с</span>
-                `;
-                adviceWidget.textContent = `👕 ${getClothingAdvice(data.temp)}`;
-            } else {
-                widget.innerHTML = '<span style="color: var(--text-muted);">Погода недоступна</span>';
-                adviceWidget.textContent = '';
-            }
-        }
-
-        renderDots();
+        // Первичная загрузка
+        initDots();
         await loadWeekData(false);
         
         if (!document.getElementById('timer-widget')) {
             document.getElementById('timer-container').appendChild(renderTimer(getDayShortRus(selectedDay)));
         }
 
+        // Кнопка "Ближайший"
         document.getElementById('btn-today')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            const smartView = getSmartViewState();
+            const smartView = getSmartViewState(userGroup);
             weekOffset = smartView.offset;
             selectedDay = smartView.day;
             updateHeaderAndCalendar();
             loadWeekData(true);
         });
 
-        await loadWeather();
+        // Погода
+        await loadWeatherWidget(weatherProvider);
     };
 
     supabase.auth.onAuthStateChange((event, session) => {

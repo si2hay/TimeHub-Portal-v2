@@ -4,6 +4,7 @@
  */
 import { DICTIONARY, ALL_SUBJECTS, ALL_ROOMS } from '../constants/dictionary.js';
 import { createSearchableSelect } from './custom-select.ui.js';
+import { escapeHTML } from '../features/sanitize.utils.js';
 
 function setupTimeInput(input, nextInput = null) {
     input.type = 'text';
@@ -67,17 +68,14 @@ export function renderConsultationsEditor() {
         <button id="btn-save-consults" class="btn btn-success btn-full" style="display:none; margin-top: 20px;">💾 Сохранить консультации</button>
     `;
 
-    // Настраиваем маску времени
     const timeStart = container.querySelector('#consult-time-start');
     const timeEnd = container.querySelector('#consult-time-end');
     setupTimeInput(timeStart, timeEnd);
     setupTimeInput(timeEnd);
 
-    // Кастомный селект для дня недели
     const dayContainer = container.querySelector('#consult-day-container');
     dayContainer.appendChild(createSearchableSelect(days, 'Пн', 'День', 'consult-day-select'));
 
-    // АВТОПОДСТАНОВКА КАБИНЕТА
     const subjectInput = container.querySelector('#consult-subject');
     const roomInput = container.querySelector('#consult-room');
     
@@ -112,10 +110,10 @@ export function renderConsultationsList(consultations, onRemove) {
         row.style.gridTemplateColumns = '60px minmax(0, 2fr) minmax(0, 1fr) 120px 80px 80px 40px';
         
         row.innerHTML = `
-            <div style="text-align: center; font-weight: bold; color: var(--accent-color);">${days[c.day_num]}</div>
-            <div class="consult-subject-text" style="font-weight: bold;">${c.subject}</div>
-            <div>${c.room || '-'}</div>
-            <div>⏰ ${c.time_start} - ${c.time_end}</div>
+            <div style="text-align: center; font-weight: bold; color: var(--accent-color);">${escapeHTML(days[c.day_num] || '?')}</div>
+            <div class="consult-subject-text" style="font-weight: bold;">${escapeHTML(c.subject)}</div>
+            <div>${escapeHTML(c.room) || '-'}</div>
+            <div>⏰ ${escapeHTML(c.time_start)} - ${escapeHTML(c.time_end)}</div>
             <div style="grid-column: span 2;"></div>
             <button class="btn btn-danger btn-icon" title="Удалить">✖</button>
         `;

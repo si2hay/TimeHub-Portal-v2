@@ -2,38 +2,85 @@
  * @file src/api/weather.api.js
  * @description Запросы к погодным API + SVG иконки.
  * Использует прокси cors.dev для обхода CORS и работы без VPN.
+ * Добавлены AbortController (таймаут 8с) и кеш в sessionStorage на 30 минут.
  */
 
 const VOLGOGRAD_LAT = 48.7194;
 const VOLGOGRAD_LON = 44.5018;
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 минут
+const FETCH_TIMEOUT_MS = 8000;
+
+function getCacheKey(provider) {
+    return `weather_cache_${provider}`;
+}
+
+function readCache(provider) {
+    try {
+        const raw = sessionStorage.getItem(getCacheKey(provider));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed.timestamp || (Date.now() - parsed.timestamp) > CACHE_TTL_MS) {
+            sessionStorage.removeItem(getCacheKey(provider));
+            return null;
+        }
+        return parsed.data;
+    } catch {
+        return null;
+    }
+}
+
+function writeCache(provider, data) {
+    try {
+        sessionStorage.setItem(getCacheKey(provider), JSON.stringify({
+            timestamp: Date.now(),
+            data
+        }));
+    } catch {
+        // sessionStorage может быть недоступен (приватный режим / лимит) — молча игнорируем
+    }
+}
+
+async function fetchWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 async function fetchWithProxy(url) {
     // Основной запрос через cors.dev
     try {
-        const proxyUrl = `https://proxy.cors.dev/${url}`;
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error(`Ошибка прокси: ${res.status}`);
-        return await res.json();
+        return await fetchWithTimeout(`https://proxy.cors.dev/${url}`);
     } catch (error) {
         console.warn('[Погода] cors.dev не ответил, пробуем напрямую (вдруг есть VPN)...', error);
         // Резервный вариант — прямой запрос (сработает только с VPN)
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Ошибка прямого запроса: ${res.status}`);
-        return await res.json();
+        return await fetchWithTimeout(url);
     }
 }
 
 export async function getWeather(provider = 'open-meteo') {
+    // 1. Пробуем кеш
+    const cached = readCache(provider);
+    if (cached) return cached;
+
+    // 2. Идём в сеть
     try {
         if (provider === 'open-meteo') {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${VOLGOGRAD_LAT}&longitude=${VOLGOGRAD_LON}&current_weather=true&timezone=Europe%2FVolgograd`;
             const data = await fetchWithProxy(url);
             
-            return {
+            const result = {
                 temp: Math.round(data.current_weather.temperature),
                 condition: data.current_weather.weathercode,
                 wind: Math.round(data.current_weather.windspeed),
             };
+            writeCache(provider, result);
+            return result;
         } 
         
         if (provider === 'wttr.in') {
@@ -41,14 +88,21 @@ export async function getWeather(provider = 'open-meteo') {
             const data = await fetchWithProxy(url);
             
             const current = data.current_condition[0];
-            return {
+            const result = {
                 temp: parseInt(current.temp_C),
                 condition: current.weatherDesc[0].value,
                 wind: parseInt(current.windspeedKmph),
             };
+            writeCache(provider, result);
+            return result;
         }
     } catch (error) {
         console.error('Ошибка загрузки погоды:', error);
+        // При ошибке — пробуем отдать старый кеш (даже протухший), чтобы не показывать "недоступна"
+        try {
+            const raw = sessionStorage.getItem(getCacheKey(provider));
+            if (raw) return JSON.parse(raw).data;
+        } catch {}
         return null;
     }
 }
@@ -65,7 +119,7 @@ export function getWeatherSVG(code) {
 
 export function getClothingAdvice(temp) {
     if (temp > 25) {
-        const arr = ["Футболка и шорты", "Легкая одежда", "Солнцезащитные очки", "Панама не помешает"];
+        const arr = ["Футболка и шорты", "Легкая одежда", "Солнечные очки", "Панама не помешает"];
         return arr[Math.floor(Math.random() * arr.length)];
     } else if (temp > 15) {
         const arr = ["Ветровка и джинсы", "Легкая кофта", "Кроссовки и худи"];

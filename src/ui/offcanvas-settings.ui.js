@@ -1,13 +1,14 @@
 /**
  * @file src/ui/offcanvas-settings.ui.js
- * @description Экран настроек (кастомизация) внутри off-canvas.
- * DANGER ZONE рендерится отдельно через debug.ui.js.
+ * @description Экран настроек (кастомизация) внутри off-canvas. Дирижер.
  */
 import { supabase } from '../api/supabase-client.js';
-import { applyUserSettings } from '../features/settings.logic.js';
-import { extractColorsFromImage } from '../features/wallpaper-theme.logic.js';
-import { createSearchableSelect } from './custom-select.ui.js';
+import { applyUserSettings } from './settings.ui.js';
 import { createDebugZone } from './debug.ui.js';
+import { setupHoldButton } from './utils/hold-button.ui.js';
+import { setupAppearanceGroup } from './offcanvas/settings/appearance.group.js';
+import { setupColorsGroup } from './offcanvas/settings/colors.group.js';
+import { setupBackgroundGroup } from './offcanvas/settings/background.group.js';
 
 export function renderSettingsView(container, profile) {
     const userId = profile?.id;
@@ -49,7 +50,6 @@ export function renderSettingsView(container, profile) {
                         <input type="number" id="radius-input" class="slider-input" min="0" max="32" value="${settings.borderRadius || 12}">
                     </div>
                 </div>
-                
                 <div class="setting-row">
                     <span class="label">Частицы на фоне</span>
                     <label class="toggle-switch">
@@ -57,7 +57,6 @@ export function renderSettingsView(container, profile) {
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
-                
                 <div class="setting-row" id="particle-count-row" style="display: ${settings.particlesEnabled ? 'flex' : 'none'};">
                     <span class="label">Кол-во частиц</span>
                     <div class="slider-wrapper">
@@ -65,7 +64,6 @@ export function renderSettingsView(container, profile) {
                         <input type="number" id="particle-count-input" class="slider-input" min="10" max="150" step="5" value="${particleCount}">
                     </div>
                 </div>
-
                 <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 5px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
                     <span class="label">Провайдер погоды</span>
                     <div id="weather-provider-container" style="width: 100%;"></div>
@@ -92,8 +90,22 @@ export function renderSettingsView(container, profile) {
             <div class="settings-header"><span>Фон сайта</span><span class="arrow">▼</span></div>
             <div class="settings-content"><div class="settings-inner">
                 <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;"><span class="label">Ссылка на медиа (URL)</span><input type="text" id="bg-url" class="admin-select" value="${settings.bgUrl || ''}" placeholder="https://..." style="width: 100%;"></div>
-                <div class="setting-row"><span class="label">Затемнение</span><input type="range" id="bg-darkness" min="0" max="10" value="${settings.bgDarkness || 0}"></div>
-                <div class="setting-row"><span class="label">Размытие</span><input type="range" id="bg-blur" min="0" max="10" value="${settings.bgBlur || 0}"></div>
+                
+                <div class="setting-row">
+                    <span class="label">Затемнение</span>
+                    <div class="slider-wrapper">
+                        <input type="range" id="bg-darkness" min="0" max="10" value="${settings.bgDarkness || 0}">
+                        <input type="number" id="bg-darkness-input" class="slider-input" min="0" max="10" value="${settings.bgDarkness || 0}">
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <span class="label">Размытие</span>
+                    <div class="slider-wrapper">
+                        <input type="range" id="bg-blur" min="0" max="10" value="${settings.bgBlur || 0}">
+                        <input type="number" id="bg-blur-input" class="slider-input" min="0" max="10" value="${settings.bgBlur || 0}">
+                    </div>
+                </div>
+
                 <button id="btn-theme-from-bg" class="btn btn-primary btn-full" style="margin-top: 10px;">✨ Взять цвета с фона</button>
                 <button id="btn-remove-bg" class="btn btn-danger btn-full btn-hold-action btn-hold-long" style="margin-top: 10px;">Удалить фон</button>
             </div></div>
@@ -109,173 +121,16 @@ export function renderSettingsView(container, profile) {
         if (userId) await supabase.from('profiles').update({ settings: currentSettings }).eq('id', userId);
     };
 
-    // Вспомогательная функция для кнопок с удержанием (3 сек)
-    function setupHoldButton(btn, onComplete) {
-        let timer = null;
-        const originalText = btn.textContent;
-
-        const start = (e) => {
-            if (e.type === 'mousedown' && e.button !== 0) return;
-            e.preventDefault();
-            btn.classList.add('is-holding');
-            btn.textContent = 'Удерживайте...';
-            
-            timer = setTimeout(() => {
-                btn.classList.remove('is-holding');
-                btn.textContent = originalText;
-                onComplete();
-            }, 3000); // 3 секунды
-        };
-
-        const cancel = () => {
-            if (timer) {
-                clearTimeout(timer);
-                timer = null;
-            }
-            btn.classList.remove('is-holding');
-            btn.textContent = originalText;
-        };
-
-        btn.addEventListener('mousedown', start);
-        btn.addEventListener('mouseup', cancel);
-        btn.addEventListener('mouseleave', cancel);
-        btn.addEventListener('touchstart', start, { passive: false });
-        btn.addEventListener('touchend', cancel);
-        btn.addEventListener('touchcancel', cancel);
-        btn.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
-
-    // 1. Шрифт (Обновленный список)
-    const fontContainer = container.querySelector('#font-select-container');
-    
-    // Определяем, какой шрифт показывать в селекте по умолчанию
-    let currentFontDisplay = 'RussoOne';
-    if (currentSettings.font === 'pressstart2p') currentFontDisplay = 'Press Start 2P';
-    if (currentSettings.font === 'tiny5duo') currentFontDisplay = 'Tiny5 Duo';
-
-    fontContainer.appendChild(createSearchableSelect(
-        ['RussoOne', 'Press Start 2P', 'Tiny5 Duo'],
-        currentFontDisplay,
-        'Выберите шрифт', 'hidden-font-select',
-        (val) => { 
-            currentSettings.font = val === 'Press Start 2P' ? 'pressstart2p' : 
-                                  (val === 'Tiny5 Duo' ? 'tiny5duo' : 'russoone'); 
-            save(); 
-        }
-    ));
-
-    // 2. Тема оформления
-    const themeContainer = container.querySelector('#theme-select-container');
-    const currentThemeName = currentSettings.theme === 'theme-classic' ? 'Классика' : 'Стекло (Glass)';
-    themeContainer.appendChild(createSearchableSelect(
-        ['Стекло (Glass)', 'Классика'],
-        currentThemeName, 'Выберите тему', 'hidden-theme-select',
-        (val) => { currentSettings.theme = val === 'Классика' ? 'theme-classic' : 'theme-glass'; save(); }
-    ));
-
-    // 3. Провайдер погоды
-    const weatherContainer = container.querySelector('#weather-provider-container');
-    const currentWeatherProvider = localStorage.getItem('weatherProvider') || 'open-meteo';
-    const weatherDisplayValue = currentWeatherProvider === 'open-meteo' ? 'Open-Meteo' : 'wttr.in';
-    weatherContainer.appendChild(createSearchableSelect(
-        ['Open-Meteo', 'wttr.in'], weatherDisplayValue, 'Выберите провайдера', 'hidden-weather-select',
-        (val) => {
-            const providerCode = val === 'Open-Meteo' ? 'open-meteo' : 'wttr.in';
-            localStorage.setItem('weatherProvider', providerCode);
-            window.location.reload();
-        }
-    ));
-
-    // Слайдеры
-    const syncSlider = (rangeId, inputId, settingKey, isGradient = false) => {
-        const range = container.querySelector(`#${rangeId}`);
-        const input = container.querySelector(`#${inputId}`);
-        if (!range || !input) return;
-        const update = (val) => {
-            const v = parseInt(val); range.value = v; input.value = v;
-            if (isGradient) currentSettings.gradient[settingKey] = v; else currentSettings[settingKey] = v;
-            save();
-        };
-        range.addEventListener('input', (e) => update(e.target.value));
-        input.addEventListener('change', (e) => update(e.target.value));
-    };
-
-    syncSlider('font-size-range', 'font-size-input', 'fontSize');
-    syncSlider('radius-range', 'radius-input', 'borderRadius');
-    syncSlider('grad-angle', 'grad-angle-input', 'angle', true);
-    
-    // Слайдер количества частиц
-    const particleCountRow = container.querySelector('#particle-count-row');
-    syncSlider('particle-count-range', 'particle-count-input', 'particleCount');
-
-    // Тумблеры и цвета
-    container.querySelector('#toggle-custom-colors')?.addEventListener('change', (e) => { currentSettings.useCustomColors = e.target.checked; save(); });
-    
-    // Тумблер частиц
-    container.querySelector('#toggle-particles')?.addEventListener('change', (e) => { 
-        currentSettings.particlesEnabled = e.target.checked; 
-        particleCountRow.style.display = e.target.checked ? 'flex' : 'none';
-        save(); 
-    });
-
-    const setColorAndEnable = (colorKey, value) => {
-        currentSettings.colors[colorKey] = value;
-        currentSettings.useCustomColors = true;
-        const tgl = container.querySelector('#toggle-custom-colors');
-        if (tgl) tgl.checked = true;
-        save();
-    };
-
-    container.querySelector('#color-accent')?.addEventListener('input', (e) => setColorAndEnable('accent', e.target.value));
-    container.querySelector('#color-surface')?.addEventListener('input', (e) => setColorAndEnable('surface', e.target.value));
-    container.querySelector('#color-text')?.addEventListener('input', (e) => setColorAndEnable('text', e.target.value));
-    container.querySelector('#color-text-muted')?.addEventListener('input', (e) => setColorAndEnable('textMuted', e.target.value));
-
-    container.querySelector('#toggle-gradient')?.addEventListener('change', (e) => { currentSettings.gradient.enabled = e.target.checked; save(); });
-    container.querySelector('#grad-color1')?.addEventListener('input', (e) => { currentSettings.gradient.color1 = e.target.value; save(); });
-    container.querySelector('#grad-color2')?.addEventListener('input', (e) => { currentSettings.gradient.color2 = e.target.value; save(); });
-
-    container.querySelector('#bg-url')?.addEventListener('change', (e) => { currentSettings.bgUrl = e.target.value; save(); });
-    container.querySelector('#bg-darkness')?.addEventListener('input', (e) => { currentSettings.bgDarkness = parseInt(e.target.value); save(); });
-    container.querySelector('#bg-blur')?.addEventListener('input', (e) => { currentSettings.bgBlur = parseInt(e.target.value); save(); });
-
-    // Взять цвета с фона
-    container.querySelector('#btn-theme-from-bg')?.addEventListener('click', async () => {
-        if (!currentSettings.bgUrl) return alert('Сначала укажи ссылку на фон!');
-        const btn = container.querySelector('#btn-theme-from-bg');
-        btn.textContent = 'Анализ...';
-        try {
-            const extracted = await extractColorsFromImage(currentSettings.bgUrl);
-            currentSettings.colors = { ...currentSettings.colors, ...extracted };
-            currentSettings.useCustomColors = true;
-            container.querySelector('#toggle-custom-colors').checked = true;
-            container.querySelector('#color-accent').value = extracted.accent;
-            container.querySelector('#color-surface').value = extracted.surface;
-            container.querySelector('#color-text').value = extracted.text;
-            save();
-            btn.textContent = '✨ Готово!';
-            setTimeout(() => btn.textContent = '✨ Взять цвета с фона', 2000);
-        } catch (e) {
-            alert(e.message);
-            btn.textContent = '✨ Взять цвета с фона';
-        }
-    });
-
-    // УДАЛЕНИЕ ФОНА (Удержание 3с)
-    const btnRemoveBg = container.querySelector('#btn-remove-bg');
-    setupHoldButton(btnRemoveBg, async () => {
-        currentSettings.bgUrl = '';
-        container.querySelector('#bg-url').value = '';
-        await save();
-        btnRemoveBg.textContent = 'Фон удален!';
-        setTimeout(() => btnRemoveBg.textContent = 'Удалить фон', 2000);
-    });
+    // Инициализация групп
+    setupAppearanceGroup(container, currentSettings, save);
+    setupColorsGroup(container, currentSettings, save, applyUserSettings);
+    setupBackgroundGroup(container, currentSettings, save);
 
     // СБРОС ВСЕХ НАСТРОЕК (Удержание 3с)
     const btnResetSettings = container.querySelector('#btn-reset-settings');
     setupHoldButton(btnResetSettings, async () => {
         currentSettings = {
-            font: 'russoone', // RussoOne теперь по умолчанию
+            font: 'russoone',
             fontSize: 10, borderRadius: 12,
             useCustomColors: false, colors: { ...defaultColors },
             gradient: { enabled: false, color1: '#0f1115', color2: '#2c5364', angle: 135 },
@@ -284,7 +139,7 @@ export function renderSettingsView(container, profile) {
         applyUserSettings(currentSettings);
         if (userId) await supabase.from('profiles').update({ settings: currentSettings }).eq('id', userId);
         window.location.reload();
-    });
+    }, 3000);
 
     // Сворачивание групп (аккордеон)
     container.querySelectorAll('.settings-header').forEach(hdr => {
@@ -301,7 +156,6 @@ export function renderSettingsView(container, profile) {
     if (debugZone) {
         const dzc = container.querySelector('#debug-zone-container');
         dzc.appendChild(debugZone);
-        // Отдельный обработчик свёртывания, т.к. DANGER ZONE рендерится позже
         const header = debugZone.querySelector('.settings-header');
         header.addEventListener('click', () => {
             const isActive = debugZone.classList.contains('active');

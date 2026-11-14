@@ -9,13 +9,11 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* Используем dvh и переменную Telegram */
     min-height: 100dvh; 
     min-height: var(--tg-viewport-stable-height, 100dvh);
     
     width: 100%;
     position: relative;
-    /* Разрешаем скролл, если клавиатура перекрывает форму */
     overflow-y: auto; 
     overflow-x: hidden;
     padding: 20px;
@@ -33,7 +31,7 @@
     height: 80vw;
     max-width: 700px;
     max-height: 700px;
-    background: url('/logo.png') no-repeat center center;
+    background: url('../../src/assets/logo.png') no-repeat center center;
     background-size: contain;
     filter: blur(60px) brightness(0.6) sepia(1) hue-rotate(180deg) saturate(4);
     z-index: -2;
@@ -60,7 +58,7 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
     z-index: 1;
     position: relative;
-    margin: auto; /* Центрируем при скролле */
+    margin: auto;
     animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -91,7 +89,6 @@
     outline: none;
     transition: all 0.3s ease;
     box-sizing: border-box;
-    /* Фикс для iOS, чтобы не было зума при фокусе (но на всякий случай) */
     font-size: max(16px, calc(16px * var(--font-scale)));
 }
 
@@ -181,9 +178,7 @@
     75% { transform: translateX(5px); }
 }
 
-/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ ===
-   blur(60px) + blur(25px) на входе = ~5–10 fps в Telegram WebView.
-   Снижаем радикально — визуально блоб остаётся размытым, но GPU дышит. */
+/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ === */
 @media (max-width: 768px) {
     .auth-bg-logo {
         filter: blur(30px) brightness(0.6) sepia(1) hue-rotate(180deg) saturate(4);
@@ -195,7 +190,6 @@
     }
 }
 
-/* Для пользователей с prefers-reduced-motion — отключаем пульсацию (доступность) */
 @media (prefers-reduced-motion: reduce) {
     .auth-bg-logo { animation: none; }
 }

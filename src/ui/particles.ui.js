@@ -1,8 +1,6 @@
 /**
- * @file src/features/particles.logic.js
- * @description Оптимизированная система частиц на Canvas (без линий).
- * Оптимизации: ограничение DPR, пауза при свёрнутой вкладке,
- * mousemove вешается только на ПК (на тачах не срабатывает, но висит вхолостую).
+ * @file src/ui/particles.ui.js
+ * @description Оптимизированная система частиц на Canvas.
  */
 
 let canvas, ctx;
@@ -25,7 +23,6 @@ class Particle {
         this.x += this.vx;
         this.y += this.vy;
 
-        // Отталкивание от мыши
         if (mouse.x != null && mouse.y != null) {
             let dx = mouse.x - this.x;
             let dy = mouse.y - this.y;
@@ -40,7 +37,6 @@ class Particle {
             }
         }
 
-        // Отскок от краев
         if (this.x < 0 || this.x > w) this.vx *= -1;
         if (this.y < 0 || this.y > h) this.vy *= -1;
         
@@ -59,10 +55,7 @@ class Particle {
 }
 
 export function initParticles(count = 30) {
-    // Если уже запущены, удаляем старые перед созданием новых
-    if (isInitialized) {
-        destroyParticles();
-    }
+    if (isInitialized) destroyParticles();
     
     canvas = document.createElement('canvas');
     canvas.id = 'particles-canvas';
@@ -74,8 +67,6 @@ export function initParticles(count = 30) {
     particles = Array.from({ length: count }, () => new Particle(window.innerWidth, window.innerHeight));
 
     window.addEventListener('resize', resizeCanvas);
-    // mousemove вешаем только если основное устройство ввода — мышь.
-    // На тачах событие всё равно не срабатывает, но слушатель висит и потребляет.
     if (window.matchMedia('(pointer: fine)').matches) {
         window.addEventListener('mousemove', handleMouseMove);
     }
@@ -100,8 +91,6 @@ export function destroyParticles() {
 
 function resizeCanvas() {
     if (!canvas) return;
-    // Ограничиваем DPR до 2: на retina-экранах canvas не будет грузить в 3 раза больше пикселей,
-    // визуально частицы остаются чёткими.
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
@@ -117,7 +106,6 @@ function handleMouseMove(e) {
 
 function handleVisibilityChange() {
     if (document.hidden) {
-        // Пауза анимации: на свёрнутой вкладке CPU/GPU не тратится на частицы
         isPaused = true;
         cancelAnimationFrame(animationId);
     } else if (isInitialized) {
@@ -128,13 +116,10 @@ function handleVisibilityChange() {
 
 function animate() {
     if (!canvas || !ctx || isPaused) return;
-    
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
     particles.forEach(p => {
         p.update(window.innerWidth, window.innerHeight);
         p.draw();
     });
-
     animationId = requestAnimationFrame(animate);
 }

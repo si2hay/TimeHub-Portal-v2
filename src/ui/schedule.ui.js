@@ -4,6 +4,7 @@
  */
 import { getBellsForGroup } from '../features/bells.logic.js';
 import { getDayNameRus } from '../features/date.logic.js';
+import { escapeHTML } from '../features/sanitize.utils.js';
 
 export function renderSkeleton() {
     const container = document.createElement('div');
@@ -29,7 +30,6 @@ export function renderSchedule(lessons, userGroup) {
     container.className = 'schedule-slide-content';
 
     if (!lessons || lessons.length === 0) {
-        // КРАСИВОЕ ПУСТОЕ СОСТОЯНИЕ С КОФЕ
         container.innerHTML = `
             <div class="glass-panel empty-schedule">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px; opacity: 0.6;">
@@ -63,14 +63,14 @@ export function renderSchedule(lessons, userGroup) {
         card.innerHTML = `
             ${badge}
             <div class="lesson-time">
-                <div class="lesson-num">${lesson.pair_num}</div>
-                <div class="lesson-clock">${timeStart} - ${timeEnd}</div>
+                <div class="lesson-num">${escapeHTML(lesson.pair_num)}</div>
+                <div class="lesson-clock">${escapeHTML(timeStart)} - ${escapeHTML(timeEnd)}</div>
             </div>
             <div class="lesson-info">
-                <div class="lesson-subject">${lesson.subject}</div>
+                <div class="lesson-subject">${escapeHTML(lesson.subject)}</div>
                 <div class="lesson-details">
-                    <span class="lesson-room">📍 ${lesson.room}</span>
-                    ${lesson.teacher ? `<span class="lesson-teacher">👤 ${lesson.teacher}</span>` : ''}
+                    <span class="lesson-room">📍 ${escapeHTML(lesson.room)}</span>
+                    ${lesson.teacher ? `<span class="lesson-teacher">👤 ${escapeHTML(lesson.teacher)}</span>` : ''}
                 </div>
             </div>
         `;

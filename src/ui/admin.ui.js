@@ -2,6 +2,7 @@
  * @file src/ui/admin.ui.js
  * @description UI-компонент для Админ-панели.
  */
+import { setupHoldButton } from './utils/hold-button.ui.js';
 
 export function renderAdminLayout(adminEmail, role, onLogout) {
     const container = document.createElement('div');
@@ -33,7 +34,6 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
                     ← На главную
                 </a>
                 
-                <!-- ДОБАВЛЕН КЛАСС btn-hold-long -->
                 <button id="btn-admin-logout" class="btn btn-danger btn-full btn-hold-action btn-hold-long">Выйти</button>
             </div>
         </aside>
@@ -46,39 +46,7 @@ export function renderAdminLayout(adminEmail, role, onLogout) {
     `;
 
     const logoutBtn = container.querySelector('#btn-admin-logout');
-    const originalText = 'Выйти';
-    let logoutTimer = null;
-
-    const startLogoutHold = (e) => {
-        if (e.type === 'mousedown' && e.button !== 0) return; 
-        e.preventDefault(); 
-        
-        logoutBtn.classList.add('is-holding');
-        logoutBtn.textContent = 'Удерживайте...'; 
-        
-        // ИЗМЕНЕНО НА 3000 МС
-        logoutTimer = setTimeout(() => {
-            onLogout();
-        }, 3000); 
-    };
-
-    const cancelLogoutHold = () => {
-        if (logoutTimer) {
-            clearTimeout(logoutTimer);
-            logoutTimer = null;
-        }
-        logoutBtn.classList.remove('is-holding');
-        logoutBtn.textContent = originalText; 
-    };
-
-    logoutBtn.addEventListener('mousedown', startLogoutHold);
-    logoutBtn.addEventListener('mouseup', cancelLogoutHold);
-    logoutBtn.addEventListener('mouseleave', cancelLogoutHold);
-
-    logoutBtn.addEventListener('touchstart', startLogoutHold, { passive: false });
-    logoutBtn.addEventListener('touchend', cancelLogoutHold);
-    logoutBtn.addEventListener('touchcancel', cancelLogoutHold);
-    logoutBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+    setupHoldButton(logoutBtn, onLogout, 3000);
 
     return container;
 }

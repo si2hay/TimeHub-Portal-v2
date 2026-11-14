@@ -1,13 +1,12 @@
 /**
  * @file styles/base/fonts.css
- * @description Подключение локальных шрифтов.
- * Оставлен только формат woff2 для быстрой загрузки.
+ * @description Подключение локальных шрифтов из src/assets/fonts.
+ * Относительные пути — Vite разрешает и переносит их при сборке корректно.
  */
 
 @font-face {
     font-family: 'RussoOne';
-    /* Vite сам подставит правильный префикс /TimeHub-Portal-v2/ */
-    src: url('/fonts/RussoOne.woff2') format('woff2');
+    src: url('../../src/assets/fonts/RussoOne.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -15,7 +14,7 @@
 
 @font-face {
     font-family: 'PressStart2P';
-    src: url('/fonts/PressStart2P.woff2') format('woff2');
+    src: url('../../src/assets/fonts/PressStart2P.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -23,8 +22,7 @@
 
 @font-face {
     font-family: 'Tiny5Duo';
-    src: url('/fonts/Tiny5Duo.woff2') format('woff2');
-    /* Указываем диапазон, так как шрифт вариативный */
+    src: url('../../src/assets/fonts/Tiny5Duo.woff2') format('woff2');
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;

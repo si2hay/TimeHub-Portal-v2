@@ -8,9 +8,9 @@ import { getWeekForDate, getDayOfWeekFromDate } from '../../features/date.logic.
 import { applySubstitutions } from '../../features/substitution.logic.js';
 import { renderSubstitutionEditor, renderSubList } from '../../ui/admin-substitution.ui.js';
 
-export function initSubstitutionTab(contentArea) {
+export function initSubstitutionTab(contentArea, profile) {
     contentArea.innerHTML = '';
-    const editor = renderSubstitutionEditor();
+    const editor = renderSubstitutionEditor(profile);
     contentArea.appendChild(editor);
 
     const btnLoad = editor.querySelector('#btn-load-subs');
@@ -37,17 +37,11 @@ export function initSubstitutionTab(contentArea) {
         const weekNum = getWeekForDate(dateVal);
         const dayNum = getDayOfWeekFromDate(dateVal);
 
-        // 1. Загружаем базовое расписание из БД
         const fetchedBase = await getScheduleForDay(groupVal, weekNum, dayNum);
-        
-        // 2. ВАЖНЕЙШИЙ ФИКС: Делаем глубокую копию базы (оригинала).
         baseLessons = JSON.parse(JSON.stringify(fetchedBase));
-
-        // 3. Накладываем сохраненные замены на базовое расписание
         const existingSubs = await getSubstitutions(dateVal, groupVal);
         currentLessons = applySubstitutions(fetchedBase, existingSubs);
         
-        // 4. Передаем в UI измененные данные (currentLessons) и чистый оригинал (baseLessons)
         renderSubList(currentLessons, baseLessons, () => { btnSave.style.display = 'block'; });
         btnSave.style.display = 'block';
     });
@@ -60,11 +54,7 @@ export function initSubstitutionTab(contentArea) {
         btnSave.disabled = true;
 
         let subsToSave = [];
-        
-        // Ищем всё, что изменилось
         currentLessons.forEach(l => { if (l.is_changed) subsToSave.push(l); });
-        
-        // Ищем то, что удалили (отменили пары)
         baseLessons.forEach(base => {
             const stillExists = currentLessons.find(l => l.pair_num === base.pair_num);
             if (!stillExists) subsToSave.push({ pair_num: base.pair_num, subject: "", room: "", teacher: "", custom_start: "", custom_end: "" });
@@ -79,7 +69,7 @@ export function initSubstitutionTab(contentArea) {
                 btnSave.textContent = '💾 Сохранить замены';
                 btnSave.style.background = '';
                 btnSave.disabled = false;
-                initSubstitutionTab(contentArea);
+                initSubstitutionTab(contentArea, profile);
             }, 1500);
         } else {
             alert('Ошибка! Проверь консоль.');

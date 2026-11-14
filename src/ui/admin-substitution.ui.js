@@ -7,6 +7,7 @@ import { DICTIONARY, ALL_SUBJECTS, ALL_TEACHERS, ALL_ROOMS } from '../constants/
 import { createSearchableSelect } from './custom-select.ui.js';
 import { createDatepicker } from './custom-datepicker.ui.js';
 import { getTodayDateString } from '../features/date.logic.js';
+import { escapeHTML } from '../features/sanitize.utils.js';
 
 function setupTimeInput(input, nextInput = null) {
     input.type = 'text';
@@ -26,9 +27,13 @@ function setupTimeInput(input, nextInput = null) {
     });
 }
 
-export function renderSubstitutionEditor() {
+export function renderSubstitutionEditor(profile) {
     const container = document.createElement('div');
     container.className = 'admin-editor';
+
+    const availableGroups = (profile?.role === 'starosta' && profile?.group_name) 
+        ? [profile.group_name] 
+        : GROUPS;
 
     container.innerHTML = `
         <datalist id="dl-sub-subjects">${ALL_SUBJECTS.map(s => `<option value="${s}">`).join('')}</datalist>
@@ -53,7 +58,7 @@ export function renderSubstitutionEditor() {
     dateContainer.appendChild(datePicker);
 
     const groupContainer = container.querySelector('#sub-group-container');
-    const customSelect = createSearchableSelect(GROUPS, GROUPS[0], 'Группа', 'sub-group');
+    const customSelect = createSearchableSelect(availableGroups, availableGroups[0], 'Группа', 'sub-group');
     groupContainer.appendChild(customSelect);
 
     return container;
@@ -79,12 +84,12 @@ export function renderSubList(lessons, baseLessons, onChange) {
             row.className = 'sub-edit-row';
             
             row.innerHTML = `
-                <input type="number" class="admin-input pair-input" value="${lesson.pair_num}" min="1" max="7" title="Измени номер для сдвига">
-                <input type="text" class="admin-input sub-subject" list="dl-sub-subjects" value="${lesson.subject || ''}" placeholder="Предмет">
-                <input type="text" class="admin-input sub-room" list="dl-sub-rooms" value="${lesson.room || ''}" placeholder="Кабинет">
-                <input type="text" class="admin-input sub-teacher" list="dl-sub-teachers" value="${lesson.teacher || ''}" placeholder="Преподаватель">
-                <input type="text" class="admin-input sub-time-start" value="${lesson.custom_start || ''}" title="Свое время (начало)">
-                <input type="text" class="admin-input sub-time-end" value="${lesson.custom_end || ''}" title="Свое время (конец)">
+                <input type="number" class="admin-input pair-input" value="${escapeHTML(lesson.pair_num)}" min="1" max="7" title="Измени номер для сдвига">
+                <input type="text" class="admin-input sub-subject" list="dl-sub-subjects" value="${escapeHTML(lesson.subject || '')}" placeholder="Предмет">
+                <input type="text" class="admin-input sub-room" list="dl-sub-rooms" value="${escapeHTML(lesson.room || '')}" placeholder="Кабинет">
+                <input type="text" class="admin-input sub-teacher" list="dl-sub-teachers" value="${escapeHTML(lesson.teacher || '')}" placeholder="Преподаватель">
+                <input type="text" class="admin-input sub-time-start" value="${escapeHTML(lesson.custom_start || '')}" title="Свое время (начало)">
+                <input type="text" class="admin-input sub-time-end" value="${escapeHTML(lesson.custom_end || '')}" title="Свое время (конец)">
                 <button class="btn btn-danger btn-icon btn-del-sub" title="Удалить/Отменить">✖</button>
             `;
 
@@ -93,11 +98,9 @@ export function renderSubList(lessons, baseLessons, onChange) {
             setupTimeInput(timeStart, timeEnd);
             setupTimeInput(timeEnd);
 
-            // ЖЕЛЕЗОБЕТОННАЯ ПРОВЕРКА ИЗМЕНЕНИЙ
             const checkChanges = () => {
                 const b = baseLessons.find(x => Number(x.pair_num) === Number(lesson.pair_num));
                 
-                // Приводим всё к строкам и обрезаем пробелы для точного сравнения
                 const s1 = String(lesson.subject || '').trim(), s2 = String(b?.subject || '').trim();
                 const r1 = String(lesson.room || '').trim(), r2 = String(b?.room || '').trim();
                 const t1 = String(lesson.teacher || '').trim(), t2 = String(b?.teacher || '').trim();
@@ -106,7 +109,6 @@ export function renderSubList(lessons, baseLessons, onChange) {
 
                 let changed = false;
                 if (!b) { 
-                    // Если пары нет в базе, она изменена, если в ней есть хоть какой-то текст
                     changed = (s1 !== "" || r1 !== "" || t1 !== "" || cs1 !== "" || ce1 !== ""); 
                 } else { 
                     changed = (s1 !== s2 || r1 !== r2 || t1 !== t2 || cs1 !== cs2 || ce1 !== ce2); 
@@ -122,7 +124,6 @@ export function renderSubList(lessons, baseLessons, onChange) {
                 onChange();
             };
 
-            // Вешаем события на все инпуты
             row.querySelector('.sub-subject').addEventListener('input', (e) => { lesson.subject = e.target.value; checkChanges(); });
             row.querySelector('.sub-room').addEventListener('input', (e) => { lesson.room = e.target.value; checkChanges(); });
             row.querySelector('.sub-teacher').addEventListener('input', (e) => { lesson.teacher = e.target.value; checkChanges(); });
@@ -160,7 +161,6 @@ export function renderSubList(lessons, baseLessons, onChange) {
                 lessons.splice(index, 1); onChange(); renderSubList(lessons, baseLessons, onChange);
             });
 
-            // ВАЖНО: Проверяем изменения сразу при отрисовке (для загруженных из БД замен)
             checkChanges();
             
             list.appendChild(row);
