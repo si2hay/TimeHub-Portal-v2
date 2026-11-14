@@ -20,8 +20,11 @@ import { updateStreak } from '../features/streak.logic.js';
 import { createHeader } from '../ui/header.ui.js';
 import { renderSchedule, renderSkeleton } from '../ui/schedule.ui.js';
 import { renderTimer, updateTimerUI } from '../ui/timer.ui.js';
+import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initApp() {
+    initTransitions(); // Инициализация плавных переходов
+
     const tg = window.Telegram?.WebApp;
     if (tg) {
         tg.ready();

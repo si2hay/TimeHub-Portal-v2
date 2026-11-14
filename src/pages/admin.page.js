@@ -10,8 +10,11 @@ import { initScheduleTab } from './admin/schedule.admin.js';
 import { initSubstitutionTab } from './admin/substitution.admin.js';
 import { initConsultationsTab } from './admin/consultations.admin.js';
 import { initUsersTab } from './admin/users.admin.js';
+import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initAdminPanel() {
+    initTransitions(); // Инициализация плавных переходов
+
     const appDiv = document.getElementById('admin-app');
     appDiv.innerHTML = '<div style="text-align:center; padding: 50px;">Проверка прав...</div>';
 

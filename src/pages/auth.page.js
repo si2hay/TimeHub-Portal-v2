@@ -6,8 +6,11 @@ import { supabase } from '../api/supabase-client.js';
 import { GROUPS } from '../constants/groups.js';
 import { initParticles } from '../features/particles.logic.js';
 import { smartSearch } from '../features/search.logic.js';
+import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initAuth() {
+    initTransitions(); // Инициализация плавных переходов
+
     const appDiv = document.getElementById('app');
     const appUrl = `${import.meta.env.BASE_URL}pages/app.html`;
 
