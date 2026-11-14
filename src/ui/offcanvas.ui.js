@@ -1,6 +1,7 @@
 /**
  * @file src/ui/offcanvas.ui.js
  * @description Off-canvas меню с аккордеонами для справочника и кастомным калькулятором.
+ * Оптимизации: mouse-listeners только на ПК, анимация калькулятора через WAAPI (без reflow).
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
@@ -103,7 +104,6 @@ export function createOffcanvas(profile) {
                     Газпром колледж Волгоград
                 </a>
                 <div class="app-version">v2.0 | Сборка: ${__BUILD_DATE__}</div>
-                <!-- ДОБАВЛЕН КЛАСС btn-hold-long -->
                 <button id="btn-sidebar-logout" class="btn btn-danger btn-full btn-hold-action btn-hold-long">Выйти</button>
             </div>
         </div>
@@ -146,6 +146,7 @@ export function createOffcanvas(profile) {
     `;
 
     let calcValue = '';
+    let popAnim = null; // для отмены предыдущей анимации
     const display = calcContainer.querySelector('#calc-display');
     const result = calcContainer.querySelector('#calc-result');
 
@@ -158,9 +159,17 @@ export function createOffcanvas(profile) {
             display.classList.add('empty');
         }
 
-        display.classList.remove('pop');
-        void display.offsetWidth;
-        display.classList.add('pop');
+        // WAAPI вместо classList.remove + void offsetWidth + classList.add.
+        // Без синхронного reflow — не дёргает layout при каждом клике.
+        if (popAnim) popAnim.cancel();
+        popAnim = display.animate(
+            [
+                { transform: 'scale(1)' },
+                { transform: 'scale(1.02)' },
+                { transform: 'scale(1)' }
+            ],
+            { duration: 200, easing: 'ease-out' }
+        );
         
         const matches = calcValue.match(/[1-5]/g);
         if (!matches || matches.length === 0) { 
@@ -375,12 +384,19 @@ export function createOffcanvas(profile) {
         }
     };
 
+    // На тач-устройствах mousemove/mouseup не срабатывают, но слушатели висят.
+    // Вешаем их только если основное устройство ввода — мышь (ПК).
+    const isPointerFine = window.matchMedia('(pointer: fine)').matches;
+
     offcanvas.addEventListener('touchstart', onDragStart, { passive: true });
     offcanvas.addEventListener('touchmove', onDragMove, { passive: true });
     offcanvas.addEventListener('touchend', onDragEnd);
-    offcanvas.addEventListener('mousedown', onDragStart);
-    window.addEventListener('mousemove', onDragMove);
-    window.addEventListener('mouseup', onDragEnd);
+
+    if (isPointerFine) {
+        offcanvas.addEventListener('mousedown', onDragStart);
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('mouseup', onDragEnd);
+    }
 
     // --- LONG PRESS (ВОЛНА) ---
     let logoutTimer = null;
@@ -389,7 +405,6 @@ export function createOffcanvas(profile) {
         e.preventDefault(); 
         btnLogout.classList.add('is-holding');
         btnLogout.textContent = 'Удерживайте...';
-        // ИЗМЕНЕНО НА 3000 МС
         logoutTimer = setTimeout(async () => {
             await supabase.auth.signOut();
             window.location.href = `${base}index.html`;

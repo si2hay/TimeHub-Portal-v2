@@ -1,6 +1,7 @@
 /**
  * @file src/pages/auth.page.js
  * @description Логика страницы входа и регистрации с русскими ошибками и умным поиском групп.
+ * Оптимизация: меньше частиц на мобильных (визуально незаметно, но WebView дышит).
  */
 import { supabase } from '../api/supabase-client.js';
 import { GROUPS } from '../constants/groups.js';
@@ -9,14 +10,16 @@ import { smartSearch } from '../features/search.logic.js';
 import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initAuth() {
-    initTransitions(); // Инициализация плавных переходов
+    initTransitions();
 
     const appDiv = document.getElementById('app');
     const appUrl = `${import.meta.env.BASE_URL}pages/app.html`;
 
     // Принудительно ставим стеклянную тему и запускаем частицы на фоне
     document.body.classList.add('theme-glass');
-    initParticles();
+    // На телефоне — меньше частиц, чтобы экран входа не фризил в WebView
+    const isMobileScreen = window.matchMedia('(max-width: 768px)').matches;
+    initParticles(isMobileScreen ? 15 : 30);
 
     // --- Проверка сессии, чтобы не было цикла ---
     const { data: { session } } = await supabase.auth.getSession();
@@ -162,7 +165,7 @@ async function initAuth() {
         
         if (!selectedGroup) {
             messageDiv.className = 'auth-message error';
-            messageDiv.textContent = 'Пожалуйста, выберите свою группу из списка!';
+            messageDiv.textContent = 'Пожалуйста, выбери свою группу из списка!';
             groupCapsule.classList.add('error-shake');
             setTimeout(() => groupCapsule.classList.remove('error-shake'), 500);
             return;

@@ -113,7 +113,8 @@
     font-weight: bold;
     font-size: 11px;
     cursor: pointer;
-    transition: all 0.2s;
+    /* Конкретные свойства вместо transition: all — браузер не парсит всё подряд */
+    transition: background 0.2s, transform 0.1s;
     font-family: inherit;
 }
 .btn-today-hint:hover {
@@ -162,6 +163,9 @@ body.font-tsap .time-value { font-size: 36px; }
 .fullscreen-timer.active {
     opacity: 1;
     pointer-events: auto;
+    /* will-change только когда активен — GPU держит слой на время открытия,
+       после закрытия слой снимается автоматически (opacity:0 + pointer-events:none). */
+    will-change: opacity;
 }
 
 .fullscreen-close {
@@ -249,4 +253,18 @@ body.font-tsap .time-value { font-size: 36px; }
     .fs-room { font-size: 18px; margin-bottom: 30px; }
     .fs-progress-track { width: 90%; height: 12px; }
     .fullscreen-close { top: 20px; right: 20px; font-size: 28px; }
+    /* На мобилке blur(25px) на весь экран — дорого. Убираем, фон и так плотный (0.95). */
+    .fullscreen-timer {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgba(15, 17, 21, 0.98);
+    }
+    /* Тень вокруг цифр на мобилке уменьшаем — тень 40px blur заметно грузит GPU */
+    .fs-time-value {
+        text-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
+    }
+    /* Тень от прогресс-бара — тоже убираем на мобилке */
+    .fs-progress-fill {
+        box-shadow: none;
+    }
 }

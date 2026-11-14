@@ -1,6 +1,8 @@
 /**
  * @file src/features/particles.logic.js
  * @description Оптимизированная система частиц на Canvas (без линий).
+ * Оптимизации: ограничение DPR, пауза при свёрнутой вкладке,
+ * mousemove вешается только на ПК (на тачах не срабатывает, но висит вхолостую).
  */
 
 let canvas, ctx;
@@ -8,6 +10,7 @@ let particles = [];
 let animationId;
 let mouse = { x: null, y: null, radius: 150 };
 let isInitialized = false;
+let isPaused = false;
 
 class Particle {
     constructor(w, h) {
@@ -68,12 +71,18 @@ export function initParticles(count = 30) {
     ctx = canvas.getContext('2d');
 
     resizeCanvas();
-    particles = Array.from({ length: count }, () => new Particle(canvas.width, canvas.height));
+    particles = Array.from({ length: count }, () => new Particle(window.innerWidth, window.innerHeight));
 
     window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('mousemove', handleMouseMove);
+    // mousemove вешаем только если основное устройство ввода — мышь.
+    // На тачах событие всё равно не срабатывает, но слушатель висит и потребляет.
+    if (window.matchMedia('(pointer: fine)').matches) {
+        window.addEventListener('mousemove', handleMouseMove);
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     isInitialized = true;
+    isPaused = false;
     animate();
 }
 
@@ -82,15 +91,23 @@ export function destroyParticles() {
     cancelAnimationFrame(animationId);
     window.removeEventListener('resize', resizeCanvas);
     window.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
     if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
     particles = [];
     isInitialized = false;
+    isPaused = false;
 }
 
 function resizeCanvas() {
     if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Ограничиваем DPR до 2: на retina-экранах canvas не будет грузить в 3 раза больше пикселей,
+    // визуально частицы остаются чёткими.
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
 function handleMouseMove(e) {
@@ -98,13 +115,24 @@ function handleMouseMove(e) {
     mouse.y = e.clientY;
 }
 
+function handleVisibilityChange() {
+    if (document.hidden) {
+        // Пауза анимации: на свёрнутой вкладке CPU/GPU не тратится на частицы
+        isPaused = true;
+        cancelAnimationFrame(animationId);
+    } else if (isInitialized) {
+        isPaused = false;
+        animate();
+    }
+}
+
 function animate() {
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx || isPaused) return;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     particles.forEach(p => {
-        p.update(canvas.width, canvas.height);
+        p.update(window.innerWidth, window.innerHeight);
         p.draw();
     });
 

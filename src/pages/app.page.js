@@ -1,6 +1,8 @@
 /**
  * @file src/pages/app.page.js
  * @description Главная страница приложения. ПК-версия разделена на две колонки.
+ * Оптимизации: will-change только на время свайпа, скелетон с задержкой 200мс,
+ * таймер останавливается при скрытой вкладке (не жрёт CPU в фоне).
  */
 import { supabase } from '../api/supabase-client.js';
 import { getUserProfile } from '../api/profile.api.js';
@@ -23,7 +25,7 @@ import { renderTimer, updateTimerUI } from '../ui/timer.ui.js';
 import { initTransitions } from '../ui/transitions.ui.js';
 
 async function initApp() {
-    initTransitions(); // Инициализация плавных переходов
+    initTransitions();
 
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -57,7 +59,7 @@ async function initApp() {
             supabase.from('profiles').update({ settings: newSettings }).eq('id', session.user.id).then();
         }
 
-        const realDay = getCurrentDay(); // 1-7
+        const realDay = getCurrentDay();
         const realWeek = getCurrentWeek();
         const realDateStr = getTodayDateString();
 
@@ -67,23 +69,18 @@ async function initApp() {
             const now = getNow();
             const mins = now.getHours() * 60 + now.getMinutes();
             
-            // Если сегодня выходной (Сб или Вс) — показываем понедельник следующей недели
             if (day === 6 || day === 7) return { day: 1, offset: 1 };
             
-            // Если будний день, проверяем, закончились ли пары
             const bells = getBellsForGroup(userGroup);
             const lastBell = bells[bells.length - 1];
             
             if (lastBell) {
                 const [h, m] = lastBell.end.split(':').map(Number);
                 if (mins >= h * 60 + m) {
-                    // Если сегодня пятница и пары кончились — показываем понедельник следующей недели
                     if (day === 5) return { day: 1, offset: 1 };
-                    // Если будний день и пары кончились — показываем завтра
                     return { day: day + 1, offset: 0 };
                 }
             }
-            // Пары еще идут или не начались — показываем сегодня
             return { day: day, offset: 0 };
         };
 
@@ -207,6 +204,7 @@ async function initApp() {
         const contentEl = document.getElementById('schedule-content');
         const viewport = document.getElementById('schedule-viewport');
         const dotsContainer = document.getElementById('schedule-dots');
+        const weekLabelEl = document.getElementById('week-label');
 
         const getPrevDay = (d) => d === 1 ? 5 : d - 1;
         const getNextDay = (d) => d === 5 ? 1 : d + 1;
@@ -273,6 +271,7 @@ async function initApp() {
         function commitSwipe(newDay, direction = 0) {
             if (isAnimating) return;
             isAnimating = true;
+            contentEl.classList.add('is-animating');
 
             const outX = direction > 0 ? -60 : (direction < 0 ? 60 : 0);
             contentEl.style.transition = 'transform 0.15s ease-in, opacity 0.15s ease-in';
@@ -288,6 +287,8 @@ async function initApp() {
                 updateHeaderAndCalendar();
                 updateContent(direction);
                 isAnimating = false;
+                // Снимаем will-change после того, как новая разметка отрисована
+                setTimeout(() => contentEl.classList.remove('is-animating'), 50);
             }, 100);
         }
 
@@ -307,6 +308,7 @@ async function initApp() {
         const onDragStart = (e) => {
             if (isAnimating) return;
             isDragging = true;
+            contentEl.classList.add('is-animating');
             if (e.type.includes('mouse')) {
                 startX = e.clientX;
                 startY = e.clientY;
@@ -358,7 +360,10 @@ async function initApp() {
                 contentEl.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
                 contentEl.style.transform = '';
                 contentEl.style.opacity = '';
-                setTimeout(() => { contentEl.style.transition = ''; }, 300);
+                setTimeout(() => {
+                    contentEl.style.transition = '';
+                    contentEl.classList.remove('is-animating');
+                }, 300);
             }
         };
 
@@ -372,7 +377,9 @@ async function initApp() {
 
         async function loadWeekData(animateDown = false) {
             const currentWeekNum = getWeekByOffset(weekOffset);
-            document.getElementById('week-label').textContent = `${currentWeekNum} неделя`;
+            if (weekLabelEl) {
+                weekLabelEl.textContent = `${currentWeekNum} неделя`;
+            }
 
             if (cache[currentWeekNum]) {
                 if (animateDown) {
@@ -384,8 +391,12 @@ async function initApp() {
                 return;
             }
 
-            contentEl.innerHTML = '';
-            contentEl.appendChild(renderSkeleton());
+            // Скелетон показываем только если загрузка длится > 200 мс.
+            // Если данные пришли быстро — пользователь не увидит «вспышку».
+            const skeletonTimer = setTimeout(() => {
+                contentEl.innerHTML = '';
+                contentEl.appendChild(renderSkeleton());
+            }, 200);
 
             const promises = [];
             for (let d = 1; d <= 5; d++) {
@@ -401,6 +412,8 @@ async function initApp() {
             }
 
             const results = await Promise.all(promises);
+            clearTimeout(skeletonTimer);
+
             cache[currentWeekNum] = {};
             results.forEach(res => {
                 cache[currentWeekNum][res.day] = res.data;
@@ -440,7 +453,6 @@ async function initApp() {
             // Ищем ближайший день с парами
             let searchDay = selectedDay;
             let searchWeekOffset = weekOffset;
-            let daysAdded = 0;
             let foundLesson = null;
             let foundStartStr = null;
 
@@ -448,7 +460,6 @@ async function initApp() {
                 if (i > 0) {
                     searchDay++;
                     if (searchDay > 5) { searchDay = 1; searchWeekOffset++; }
-                    daysAdded++;
                 }
 
                 const w = getWeekByOffset(searchWeekOffset);
@@ -494,7 +505,30 @@ async function initApp() {
                 progress: 0
             });
         };
-        setInterval(updateTimer, 1000);
+
+        // Пауза таймера при скрытой вкладке. На слабом телефоне это экономит
+        // батарею и CPU — а при возврате сразу пересчитывает и продолжает.
+        let timerIntervalId = null;
+        const startTimer = () => {
+            if (timerIntervalId) return;
+            timerIntervalId = setInterval(updateTimer, 1000);
+        };
+        const stopTimer = () => {
+            if (timerIntervalId) {
+                clearInterval(timerIntervalId);
+                timerIntervalId = null;
+            }
+        };
+        const onVisibilityChange = () => {
+            if (document.hidden) {
+                stopTimer();
+            } else {
+                updateTimer(); // сразу обновить, чтобы цифры не «застыли»
+                startTimer();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        startTimer();
 
         document.getElementById('btn-prev-week').addEventListener('click', () => {
             weekOffset -= 1;

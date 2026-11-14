@@ -22,3 +22,17 @@ body.theme-glass .glass-panel:hover {
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
+
+/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ ===
+   blur(40px) на мобильном GPU — главная причина фризов.
+   Уменьшаем до 12px — визуально «стекло» остаётся, но fps вырастает в разы. */
+@media (max-width: 768px) {
+    body.theme-glass {
+        --glass-blur: blur(12px);
+    }
+    /* На тачах :hover не срабатывает, но правило парсится — убираем */
+    body.theme-glass .glass-panel:hover {
+        background: var(--glass-bg);
+        box-shadow: var(--glass-shadow);
+    }
+}

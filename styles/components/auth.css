@@ -180,3 +180,22 @@
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+/* === ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ ===
+   blur(60px) + blur(25px) на входе = ~5–10 fps в Telegram WebView.
+   Снижаем радикально — визуально блоб остаётся размытым, но GPU дышит. */
+@media (max-width: 768px) {
+    .auth-bg-logo {
+        filter: blur(30px) brightness(0.6) sepia(1) hue-rotate(180deg) saturate(4);
+    }
+    .auth-container {
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        background: rgba(15, 17, 21, 0.6) !important;
+    }
+}
+
+/* Для пользователей с prefers-reduced-motion — отключаем пульсацию (доступность) */
+@media (prefers-reduced-motion: reduce) {
+    .auth-bg-logo { animation: none; }
+}

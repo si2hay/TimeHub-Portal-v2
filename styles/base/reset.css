@@ -8,13 +8,23 @@
   -webkit-touch-callout: none;
 }
 
-html, body {
+html {
   margin: 0;
   padding: 0;
+  /* Запрещаем «отскок» всей страницы — иначе в WebView она залипает после свайпа */
   overscroll-behavior: none;
   /* ФИКС: overflow-x: clip клипает горизонтальный overflow, но НЕ создает
-     скролл-контейнер, поэтому вертикальный drag-to-scroll пальцем работает.
-     hidden - создавал BFC и ломал вертикальный скролл в WebView. */
+     скролл-контейнер, поэтому вертикальный drag-to-scroll пальцем работает. */
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  /* А вот на body оставляем bounce, но не даём «проваливаться» на html.
+     Это возвращает привычный плавный скролл пальцем в Telegram WebView. */
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   overflow-x: clip;
 }
 

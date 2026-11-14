@@ -1,6 +1,7 @@
 /**
  * @file styles/components/custom-select.css
  * @description Стили кастомного выпадающего списка с поиском (createSearchableSelect).
+ * На мобилках убран внутренний blur и уменьшены тени — дропдаун открывается плавнее.
  */
 
 .custom-select-wrapper { 
@@ -47,11 +48,11 @@
     opacity: 0; 
     visibility: hidden; 
     transform: translateY(-10px);
-    transition: opacity 0.2s, transform 0.2s; 
+    /* Конкретные свойства вместо transition: all */
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
     max-height: 250px; 
     display: flex; 
     flex-direction: column;
-    /* Легкая тень вместо 0 10px 30px rgba(0,0,0,0.8) */
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     pointer-events: none;
     box-sizing: border-box;
@@ -77,10 +78,11 @@
     box-sizing: border-box; 
     line-height: 1.1; 
     font-size: max(16px, calc(14px * var(--font-scale))); /* 16px чтобы iOS не зумил */
+    transition: border-color 0.2s;
 }
 .dropdown-search:focus { border-color: var(--accent-color); }
 
-.custom-options { overflow-y: auto; padding: 5px; flex-grow: 1; scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent; }
+.custom-options { overflow-y: auto; padding: 5px; flex-grow: 1; scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent; -webkit-overflow-scrolling: touch; }
 .custom-options::-webkit-scrollbar { width: 6px; }
 .custom-options::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 3px; }
 
@@ -90,7 +92,7 @@
     cursor: pointer; 
     border-radius: 4px; 
     color: #fff !important; 
-    transition: background 0.1s; 
+    transition: background-color 0.1s; 
     line-height: 1.1;
 }
 .custom-option:hover { background: rgba(255,255,255,0.1) !important; }
@@ -98,7 +100,7 @@
 
 .no-results { padding: 10px; text-align: center; color: var(--text-muted); font-size: calc(12px * var(--font-scale)); }
 
-/* На мобилках убираем тяжелую тень совсем */
+/* На мобилках убираем тяжёлую тень совсем — дропдаун и так поверх контента */
 @media (max-width: 768px) {
     .custom-dropdown {
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);

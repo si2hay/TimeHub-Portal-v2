@@ -1,7 +1,32 @@
 /**
  * @file src/ui/timer.ui.js
  * @description Компонент таймера (обычный виджет + полноэкранный режим).
+ * DOM-ссылки кешируются в модуле — минус 12 getElementById в секунду.
  */
+
+// Кеш DOM-элементов. Проверяем isConnected — если элемент удалён из DOM,
+// запрашиваем заново. Это спасает от «протухших» ссылок после ре-рендера.
+const els = {
+    status: null,
+    subject: null,
+    timeLabel: null,
+    timeValue: null,
+    progress: null,
+    fsStatus: null,
+    fsSubject: null,
+    fsRoom: null,
+    fsTimeLabel: null,
+    fsTimeValue: null,
+    fsProgress: null,
+};
+
+function getEl(key, id) {
+    const cached = els[key];
+    if (cached && cached.isConnected) return cached;
+    const el = document.getElementById(id);
+    if (el) els[key] = el;
+    return el;
+}
 
 export function renderTimer(dayShort = '') {
     const timerDiv = document.createElement('div');
@@ -66,12 +91,12 @@ export function renderTimer(dayShort = '') {
 
 export function updateTimerUI(state) {
     // 1. Обновляем обычный виджет
-    const statusEl = document.getElementById('t-status');
+    const statusEl = getEl('status', 't-status');
     if (!statusEl) return; 
 
     statusEl.textContent = state.text;
     
-    const subjectEl = document.getElementById('t-subject');
+    const subjectEl = getEl('subject', 't-subject');
     if (subjectEl) {
         if (state.subject) {
             subjectEl.innerHTML = `${state.subject} ${state.room ? `<span class="timer-room">• ${state.room}</span>` : ''}`;
@@ -80,8 +105,8 @@ export function updateTimerUI(state) {
         }
     }
     
-    const timeLabel = document.getElementById('t-time-label');
-    const timeValueEl = document.getElementById('t-time-value');
+    const timeLabel = getEl('timeLabel', 't-time-label');
+    const timeValueEl = getEl('timeValue', 't-time-value');
     if (timeLabel && timeValueEl) {
         if (state.timeLeft) {
             timeLabel.style.visibility = 'visible';
@@ -94,21 +119,21 @@ export function updateTimerUI(state) {
         }
     }
     
-    const progressBar = document.getElementById('t-progress');
+    const progressBar = getEl('progress', 't-progress');
     if (progressBar && state.progress !== undefined) {
         const p = Math.max(0, Math.min(1, state.progress));
         progressBar.style.width = `${p * 100}%`;
     }
 
     // 2. Обновляем полноэкранный режим
-    const fsStatus = document.getElementById('fs-status');
+    const fsStatus = getEl('fsStatus', 'fs-status');
     if (fsStatus) {
         fsStatus.textContent = state.text;
-        document.getElementById('fs-subject').textContent = state.subject || '';
-        document.getElementById('fs-room').textContent = state.room ? `📍 ${state.room}` : '';
+        getEl('fsSubject', 'fs-subject').textContent = state.subject || '';
+        getEl('fsRoom', 'fs-room').textContent = state.room ? `📍 ${state.room}` : '';
         
-        const fsTimeLabel = document.getElementById('fs-time-label');
-        const fsTimeValue = document.getElementById('fs-time-value');
+        const fsTimeLabel = getEl('fsTimeLabel', 'fs-time-label');
+        const fsTimeValue = getEl('fsTimeValue', 'fs-time-value');
         if (state.timeLeft) {
             fsTimeLabel.style.visibility = 'visible';
             fsTimeValue.style.visibility = 'visible';
@@ -119,7 +144,7 @@ export function updateTimerUI(state) {
             fsTimeValue.style.visibility = 'hidden';
         }
 
-        const fsProgress = document.getElementById('fs-progress');
+        const fsProgress = getEl('fsProgress', 'fs-progress');
         if (fsProgress && state.progress !== undefined) {
             const p = Math.max(0, Math.min(1, state.progress));
             fsProgress.style.width = `${p * 100}%`;
