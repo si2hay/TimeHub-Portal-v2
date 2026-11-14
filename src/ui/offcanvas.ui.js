@@ -1,7 +1,11 @@
 /**
  * @file src/ui/offcanvas.ui.js
  * @description Off-canvas меню с аккордеонами для справочника и кастомным калькулятором.
- * Оптимизации: mouse-listeners только на ПК, анимация калькулятора через WAAPI (без reflow).
+ * Оптимизации:
+ *  - mouse-listeners только на ПК;
+ *  - анимация калькулятора через WAAPI (без reflow);
+ *  - аккордеон консультаций открывается мгновенно (toggle до await),
+ *    данные грузятся в фоне + кеш в модуле + предзагрузка при открытии меню.
  */
 import { supabase } from '../api/supabase-client.js';
 import { renderSettingsView } from './offcanvas-settings.ui.js';
@@ -12,6 +16,49 @@ import { applySubstitutions } from '../features/substitution.logic.js';
 import { getWeekByOffset, getDateForDayAndWeek } from '../features/date.logic.js';
 import { renderFullSchedule } from './schedule.ui.js';
 
+const CONSULT_DAYS = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
+
+// HTML скелетона консультаций (2 карточки-заглушки)
+function renderConsultsSkeleton() {
+    return `
+        <div class="consult-skeleton-list">
+            ${[1, 2].map(() => `
+                <div class="consult-card" style="border-color: transparent;">
+                    <div class="skeleton-block" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                        <div class="skeleton-block" style="width: 60%; height: 16px;"></div>
+                        <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// HTML списка консультаций или пустого состояния
+function renderConsultsList(consults) {
+    if (!consults || consults.length === 0) {
+        return '<div class="admin-placeholder">Пока нет консультаций</div>';
+    }
+    let html = '<div class="consults-list">';
+    consults.forEach(c => {
+        html += `
+            <div class="consult-card">
+                <div class="consult-day">${CONSULT_DAYS[c.day_num] || '?'}</div>
+                <div class="consult-info">
+                    <div class="consult-subject">${c.subject}</div>
+                    <div class="consult-details">
+                        <span>⏰ ${c.time_start} - ${c.time_end}</span>
+                        ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    return html;
+}
+
 export function createOffcanvas(profile) {
     const tg = window.Telegram?.WebApp;
     const base = import.meta.env.BASE_URL;
@@ -19,6 +66,13 @@ export function createOffcanvas(profile) {
     const userGroup = profile?.group_name || 'Нет группы';
     const email = profile?.email || 'user@mail.ru';
     const avatarLetter = email.charAt(0).toUpperCase();
+
+    // Кеш консультаций на уровне экземпляра меню.
+    // null = ещё не грузили, [] = пусто, [{...}] = данные.
+    let consultsCache = null;
+    // Промис загрузки — чтобы не дублировать запросы, если пользователь
+    // быстро открывает/закрывает меню.
+    let consultsLoadingPromise = null;
 
     const overlay = document.createElement('div');
     overlay.className = 'offcanvas-overlay';
@@ -146,7 +200,7 @@ export function createOffcanvas(profile) {
     `;
 
     let calcValue = '';
-    let popAnim = null; // для отмены предыдущей анимации
+    let popAnim = null;
     const display = calcContainer.querySelector('#calc-display');
     const result = calcContainer.querySelector('#calc-result');
 
@@ -192,58 +246,75 @@ export function createOffcanvas(profile) {
     calcContainer.querySelector('#calc-back').addEventListener('click', () => { calcValue = calcValue.slice(0, -1); updateCalc(); });
     calcContainer.querySelector('#calc-clear').addEventListener('click', () => { calcValue = ''; updateCalc(); });
 
+    // --- КОНСУЛЬТАЦИИ: КЕШ + ПРЕДЗАГРУЗКА ---
+    // Функция грузит консультации один раз. Повторные вызовы возвращают
+    // тот же промис (пока загрузка идёт) или уже готовые данные из кеша.
+    const loadConsults = () => {
+        if (consultsCache !== null) return Promise.resolve(consultsCache);
+        if (consultsLoadingPromise) return consultsLoadingPromise;
+        consultsLoadingPromise = getConsultations().then(data => {
+            consultsCache = data || [];
+            consultsLoadingPromise = null;
+            return consultsCache;
+        }).catch(err => {
+            consultsLoadingPromise = null;
+            throw err;
+        });
+        return consultsLoadingPromise;
+    };
+
+    // Сюда рендерим результат, если аккордеон открыт к моменту прихода данных.
+    // Если уже закрыт — ничего не делаем, данные полежат в кеше.
+    const applyConsultsToContainer = (container, consults) => {
+        if (!container.isConnected) return;
+        container.innerHTML = renderConsultsList(consults);
+    };
+
     // --- АККОРДЕОНЫ В ГЛАВНОМ МЕНЮ ---
     const refGroups = offcanvas.querySelectorAll('.settings-group');
     refGroups.forEach(group => {
         const header = group.querySelector('.settings-header');
-        header.addEventListener('click', async () => {
+        header.addEventListener('click', () => {
             const isActive = group.classList.contains('active');
-            
-            if (group.id === 'ref-group-consults' && !isActive) {
-                const container = group.querySelector('#consults-container');
-                if (container.innerHTML.includes('Открой, чтобы загрузить')) {
-                    container.innerHTML = `
-                        <div class="consult-skeleton-list">
-                            ${[1, 2].map(() => `
-                                <div class="consult-card" style="border-color: transparent;">
-                                    <div class="skeleton-block" style="width: 40px; height: 40px; border-radius: 8px;"></div>
-                                    <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                                        <div class="skeleton-block" style="width: 60%; height: 16px;"></div>
-                                        <div class="skeleton-block" style="width: 40%; height: 12px;"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                    const consults = await getConsultations();
-                    
-                    if (consults.length === 0) {
-                        container.innerHTML = '<div class="admin-placeholder">Пока нет консультаций</div>';
-                    } else {
-                        const days = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
-                        let html = '<div class="consults-list">';
-                        consults.forEach(c => {
-                            html += `
-                                <div class="consult-card">
-                                    <div class="consult-day">${days[c.day_num]}</div>
-                                    <div class="consult-info">
-                                        <div class="consult-subject">${c.subject}</div>
-                                        <div class="consult-details">
-                                            <span>⏰ ${c.time_start} - ${c.time_end}</span>
-                                            ${c.room ? `<span>📍 ${c.room}</span>` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        html += '</div>';
-                        container.innerHTML = html;
-                    }
-                }
-            }
+            const isOpening = !isActive;
 
+            // 1) СРАЗУ переключаем остальные и текущую группу — анимация стартует немедленно.
             refGroups.forEach(g => { if (g !== group) g.classList.remove('active'); });
             group.classList.toggle('active');
+
+            // 2) И только ПОСЛЕ этого занимаемся данными (если группа консультаций).
+            if (group.id === 'ref-group-consults' && isOpening) {
+                const container = group.querySelector('#consults-container');
+                if (!container) return;
+
+                // Если кеш уже есть — рендерим мгновенно, никаких скелетонов.
+                if (consultsCache !== null) {
+                    applyConsultsToContainer(container, consultsCache);
+                    return;
+                }
+
+                // Кеша нет. Показываем скелетон с задержкой 150 мс —
+                // если ответ придёт быстрее, пользователь его не увидит.
+                let skeletonShown = false;
+                const skeletonTimer = setTimeout(() => {
+                    skeletonShown = true;
+                    if (container.isConnected) container.innerHTML = renderConsultsSkeleton();
+                }, 150);
+
+                // Данные грузим в фоне. UI уже открыт, анимация уже идёт.
+                loadConsults()
+                    .then(data => {
+                        clearTimeout(skeletonTimer);
+                        // Если пользователь уже закрыл меню/аккордеон — не трогаем DOM.
+                        if (!container.isConnected) return;
+                        applyConsultsToContainer(container, data);
+                    })
+                    .catch(() => {
+                        clearTimeout(skeletonTimer);
+                        if (!container.isConnected) return;
+                        container.innerHTML = '<div class="admin-placeholder">Не удалось загрузить консультации</div>';
+                    });
+            }
         });
     });
 
@@ -265,6 +336,11 @@ export function createOffcanvas(profile) {
         if (tg) {
             tg.BackButton.show();
             tg.BackButton.onClick(() => history.back());
+        }
+        // Предзагрузка консультаций в фоне, пока пользователь смотрит профиль.
+        // К моменту клика на аккордеон данные, скорее всего, уже придут.
+        if (consultsCache === null && !consultsLoadingPromise) {
+            loadConsults().catch(() => { /* ошибку покажем при открытии аккордеона */ });
         }
     };
 
