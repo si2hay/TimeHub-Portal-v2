@@ -4,7 +4,6 @@
  */
 import { createOffcanvas } from './offcanvas.ui.js';
 import { createDatepicker } from './custom-datepicker.ui.js';
-import { getTodayDateString } from '../features/date.logic.js';
 
 function getStreakText(n) {
     const lastDigit = n % 10;
@@ -16,7 +15,7 @@ function getStreakText(n) {
     return `${n} дней`;
 }
 
-export function createHeader(dateString, profile, onDateChange, isStreakUpdated = false) {
+export function createHeader(dateString, initialDate, profile, onDateChange, isStreakUpdated = false) {
     const header = document.createElement('header');
     header.className = 'app-header glass-panel';
 
@@ -81,7 +80,8 @@ export function createHeader(dateString, profile, onDateChange, isStreakUpdated 
     });
 
     const dateWrapper = header.querySelector('#header-date-wrapper');
-    const dp = createDatepicker(getTodayDateString(), (newDate) => {
+    // ФИКС: Передаем initialDate вместо getTodayDateString
+    const dp = createDatepicker(initialDate, (newDate) => {
         if (onDateChange) onDateChange(newDate);
     }, 'header-date-picker', 'right');
     

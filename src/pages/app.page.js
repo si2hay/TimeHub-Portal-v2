@@ -192,8 +192,13 @@ async function initApp() {
             </main>
         `;
 
-        const header = createHeader(getHeaderDateString(), profile, handleDateChange, isUpdated);
+        // ФИКС: Передаем правильную целевую дату при создании шапки
+        const initialTargetDate = getDateForDayAndWeek(selectedDay, weekOffset);
+        const header = createHeader(getHeaderDateString(), initialTargetDate, profile, handleDateChange, isUpdated);
         document.getElementById('header-container').appendChild(header);
+
+        // ФИКС: Принудительно синхронизируем календарь сразу после рендера
+        updateHeaderAndCalendar();
 
         const contentEl = document.getElementById('schedule-content');
         const viewport = document.getElementById('schedule-viewport');
@@ -528,7 +533,6 @@ async function initApp() {
             document.getElementById('timer-container').appendChild(renderTimer(getDayShortRus(selectedDay)));
         }
 
-        // ФИКС: Кнопка "Сегодня" теперь использует умную логику
         document.getElementById('btn-today')?.addEventListener('click', (e) => {
             e.stopPropagation();
             const smartView = getSmartViewState();
@@ -541,7 +545,6 @@ async function initApp() {
         await loadWeather();
     };
 
-    // Запускаем после восстановления сессии
     supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'INITIAL_SESSION') {
             if (session) {

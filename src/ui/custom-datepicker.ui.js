@@ -1,6 +1,6 @@
 /**
  * @file src/ui/custom-datepicker.ui.js
- * @description Кастомный календарь с номерами учебных недель.
+ * @description Кастомный календарь с номерами учебных недель. Выходные заблокированы.
  */
 import { getWeekForDate } from '../features/date.logic.js';
 
@@ -94,6 +94,10 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             const dateObj = new Date(year, month, i);
             const dateStr = getLocalDateStr(dateObj);
             
+            // ПРОВЕРКА НА ВЫХОДНЫЕ
+            const dayOfWeek = dateObj.getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
             const isSelected = hiddenInput.value === dateStr;
             const isToday = todayStr === dateStr;
             
@@ -102,9 +106,10 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
             let classes = 'dp-day';
             if (isSelected) classes += ' selected';
             if (isToday) classes += ' today';
+            if (isWeekend) classes += ' disabled'; // Добавляем класс неактивности
             
             daysHTML += `
-                <div class="${classes}" data-date="${dateStr}">
+                <div class="${classes}" data-date="${dateStr}" ${isWeekend ? '' : `data-clickable="true"`}>
                     ${i}
                     <span class="dp-week-num">${weekNum} нед.</span>
                 </div>
@@ -112,7 +117,8 @@ export function createDatepicker(initialDate, onChange, inputId = 'custom-date-i
         }
         daysContainer.innerHTML = daysHTML;
 
-        daysContainer.querySelectorAll('.dp-day:not(.empty)').forEach(el => {
+        // Навешиваем клики ТОЛЬКО на будние дни
+        daysContainer.querySelectorAll('.dp-day[data-clickable="true"]').forEach(el => {
             el.addEventListener('click', (e) => {
                 const target = e.target.closest('.dp-day');
                 const dateStr = target.dataset.date;

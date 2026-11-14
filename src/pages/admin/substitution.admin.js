@@ -23,6 +23,14 @@ export function initSubstitutionTab(contentArea) {
         const groupVal = document.getElementById('sub-group').value;
         if (!dateVal) return alert('Выбери дату!');
 
+        // ДОПОЛНИТЕЛЬНАЯ ЗАЩИТА ОТ ВЫХОДНЫХ
+        const dateObj = new Date(dateVal);
+        const dayOfWeek = dateObj.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            alert('Нельзя делать замены на выходные дни!');
+            return;
+        }
+
         const listContainer = document.getElementById('subs-edit-list');
         listContainer.innerHTML = '<div class="admin-placeholder">Загрузка расписания...</div>';
 
@@ -33,8 +41,6 @@ export function initSubstitutionTab(contentArea) {
         const fetchedBase = await getScheduleForDay(groupVal, weekNum, dayNum);
         
         // 2. ВАЖНЕЙШИЙ ФИКС: Делаем глубокую копию базы (оригинала).
-        // Если этого не сделать, при изменении текста будут меняться оба массива сразу,
-        // и проверка "изменилось ли что-то" всегда будет выдавать false.
         baseLessons = JSON.parse(JSON.stringify(fetchedBase));
 
         // 3. Накладываем сохраненные замены на базовое расписание

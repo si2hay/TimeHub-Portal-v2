@@ -56,22 +56,10 @@ export function renderScheduleEditor() {
 
     const weekContainer = container.querySelector('#schedule-week-container');
     const weekSelect = createSearchableSelect(weeks, weeks[0], 'Неделя', 'edit-week');
-    const hiddenWeek = weekSelect.querySelector('#edit-week');
-    hiddenWeek.innerHTML = `<option value="1">1 неделя</option><option value="2">2 неделя</option>`;
-    hiddenWeek.value = "1"; 
     weekContainer.appendChild(weekSelect);
 
     const dayContainer = container.querySelector('#schedule-day-container');
     const daySelect = createSearchableSelect(days, days[0], 'День', 'edit-day');
-    const hiddenDay = daySelect.querySelector('#edit-day');
-    hiddenDay.innerHTML = `
-        <option value="1">Понедельник</option>
-        <option value="2">Вторник</option>
-        <option value="3">Среда</option>
-        <option value="4">Четверг</option>
-        <option value="5">Пятница</option>
-    `;
-    hiddenDay.value = "1"; 
     dayContainer.appendChild(daySelect);
 
     return container;
@@ -86,7 +74,6 @@ export function renderLessonsList(lessons, onChange) {
         listContainer.innerHTML = '';
         lessons.sort((a, b) => a.pair_num - b.pair_num);
 
-        // ДОБАВЛЯЕМ ШАПКУ КАК В ЗАМЕНАХ
         const header = document.createElement('div');
         header.className = 'sub-list-header';
         header.innerHTML = `<div>№</div><div>Предмет</div><div>Кабинет</div><div>Преподаватель</div><div>Начало</div><div>Конец</div><div></div>`;
@@ -94,10 +81,8 @@ export function renderLessonsList(lessons, onChange) {
 
         lessons.forEach((lesson, index) => {
             const row = document.createElement('div');
-            // МЕНЯЕМ КЛАСС НА sub-edit-row ДЛЯ ЕДИНОГО СТИЛЯ
             row.className = 'sub-edit-row';
             
-            // МЕНЯЕМ КЛАССЫ ИНПУТОВ НА sub-*
             row.innerHTML = `
                 <input type="number" class="admin-input pair-input" value="${lesson.pair_num}" min="1" max="7" title="Измени номер для сдвига">
                 <input type="text" class="admin-input sub-subject" list="dl-subjects" value="${lesson.subject || ''}" placeholder="Предмет">
@@ -113,7 +98,6 @@ export function renderLessonsList(lessons, onChange) {
             setupTimeInput(timeStart, timeEnd);
             setupTimeInput(timeEnd);
 
-            // ОБНОВЛЯЕМ СЕЛЕКТОРЫ, ТАК КАК КЛАССЫ ПОМЕНЯЛИСЬ
             row.querySelector('.sub-subject').addEventListener('input', (e) => { lesson.subject = e.target.value; onChange(); });
             row.querySelector('.sub-room').addEventListener('input', (e) => { lesson.room = e.target.value; onChange(); });
             row.querySelector('.sub-teacher').addEventListener('input', (e) => { lesson.teacher = e.target.value; onChange(); });

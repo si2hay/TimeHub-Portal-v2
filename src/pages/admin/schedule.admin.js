@@ -14,10 +14,22 @@ export function initScheduleTab(contentArea) {
     const btnSave = editor.querySelector('#btn-save-schedule');
     let currentLessons = [];
 
+    // Вспомогательная функция для перевода слов в числа
+    const getWeekNum = () => {
+        const val = document.getElementById('edit-week').value;
+        return val.includes('2') ? 2 : 1;
+    };
+    
+    const getDayNum = () => {
+        const val = document.getElementById('edit-day').value;
+        const map = { 'Понедельник': 1, 'Вторник': 2, 'Среда': 3, 'Четверг': 4, 'Пятница': 5 };
+        return map[val] || 1;
+    };
+
     btnLoad.addEventListener('click', async () => {
         const group = document.getElementById('edit-group').value;
-        const week = parseInt(document.getElementById('edit-week').value);
-        const day = parseInt(document.getElementById('edit-day').value);
+        const week = getWeekNum();
+        const day = getDayNum();
         
         document.getElementById('schedule-edit-list').innerHTML = '<div class="admin-placeholder">Загрузка...</div>';
         btnSave.style.display = 'none';
@@ -29,8 +41,8 @@ export function initScheduleTab(contentArea) {
 
     btnSave.addEventListener('click', async () => {
         const group = document.getElementById('edit-group').value;
-        const week = parseInt(document.getElementById('edit-week').value);
-        const day = parseInt(document.getElementById('edit-day').value);
+        const week = getWeekNum();
+        const day = getDayNum();
 
         btnSave.textContent = 'Сохранение...';
         btnSave.disabled = true;

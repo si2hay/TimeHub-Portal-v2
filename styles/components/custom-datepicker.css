@@ -67,3 +67,13 @@
     pointer-events: none;
 }
 .dp-day.selected .dp-week-num { color: rgba(255,255,255,0.8); }
+/* Неактивные дни (выходные) */
+.dp-day.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none; /* Полностью блокируем клики */
+}
+
+.dp-day.disabled:hover {
+    background: transparent; /* Убираем эффект наведения */
+}
