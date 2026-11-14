@@ -1,7 +1,6 @@
 /**
  * @file src/pages/auth.page.js
  * @description Логика страницы входа и регистрации с русскими ошибками и умным поиском групп.
- * Оптимизация: меньше частиц на мобильных (визуально незаметно, но WebView дышит).
  */
 import { supabase } from '../api/supabase-client.js';
 import { GROUPS } from '../constants/groups.js';
@@ -15,25 +14,20 @@ async function initAuth() {
     const appDiv = document.getElementById('app');
     const appUrl = `${import.meta.env.BASE_URL}pages/app.html`;
 
-    // Принудительно ставим стеклянную тему и запускаем частицы на фоне
     document.body.classList.add('theme-glass');
-    // На телефоне — меньше частиц, чтобы экран входа не фризил в WebView
     const isMobileScreen = window.matchMedia('(max-width: 768px)').matches;
     initParticles(isMobileScreen ? 15 : 30);
 
-    // --- Проверка сессии, чтобы не было цикла ---
+    // Проверка сессии
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
         window.location.href = appUrl;
         return;
     }
-    // --- КОНЕЦ ПРОВЕРКИ ---
 
     appDiv.innerHTML = `
         <div class="auth-wrapper">
-            <!-- Синий размытый логотип на фоне -->
             <div class="auth-bg-logo"></div>
-
             <div class="auth-container">
                 <h2 class="auth-title">Вход в TimeHub</h2>
                 
@@ -45,7 +39,6 @@ async function initAuth() {
                         <input type="password" id="password" placeholder="Пароль (мин. 6 символов)" required minlength="6">
                     </div>
                     
-                    <!-- КАСТОМНЫЙ ВЫБОР ГРУППЫ -->
                     <div class="input-group custom-select-wrapper" id="group-select-wrapper">
                         <div class="custom-capsule placeholder" id="group-capsule">
                             <span id="selected-group-text">Выберите свою группу</span>
@@ -55,9 +48,7 @@ async function initAuth() {
                             <div class="dropdown-search-wrapper">
                                 <input type="text" id="group-search" placeholder="🔍 Умный поиск..." autocomplete="off">
                             </div>
-                            <div class="custom-options" id="group-options">
-                                <!-- Сюда рендерятся группы -->
-                            </div>
+                            <div class="custom-options" id="group-options"></div>
                         </div>
                     </div>
                     
@@ -76,7 +67,6 @@ async function initAuth() {
     const passwordInput = document.getElementById('password');
     const messageDiv = document.getElementById('auth-message');
 
-    // --- ЛОГИКА ВЫБОРА ГРУППЫ ---
     const groupCapsule = document.getElementById('group-capsule');
     const groupDropdown = document.getElementById('group-dropdown');
     const groupSearch = document.getElementById('group-search');
@@ -84,18 +74,13 @@ async function initAuth() {
     const selectedGroupText = document.getElementById('selected-group-text');
     let selectedGroup = '';
 
-    // Функция отрисовки списка групп (с умным поиском)
     const renderOptions = (query = '') => {
         const filtered = smartSearch(GROUPS, query);
-        
         if (filtered.length === 0) {
             groupOptions.innerHTML = '<div class="no-results">Ничего не найдено</div>';
             return;
         }
-
-        groupOptions.innerHTML = filtered.map(g => `
-            <div class="custom-option" data-value="${g}">${g}</div>
-        `).join('');
+        groupOptions.innerHTML = filtered.map(g => `<div class="custom-option" data-value="${g}">${g}</div>`).join('');
 
         groupOptions.querySelectorAll('.custom-option').forEach(opt => {
             opt.addEventListener('click', () => {
@@ -114,9 +99,7 @@ async function initAuth() {
     groupCapsule.addEventListener('click', (e) => {
         e.stopPropagation();
         groupDropdown.classList.toggle('open');
-        if (groupDropdown.classList.contains('open')) {
-            groupSearch.focus();
-        }
+        if (groupDropdown.classList.contains('open')) groupSearch.focus();
     });
 
     document.addEventListener('click', (e) => {
@@ -125,11 +108,8 @@ async function initAuth() {
         }
     });
 
-    groupSearch.addEventListener('input', (e) => {
-        renderOptions(e.target.value);
-    });
+    groupSearch.addEventListener('input', (e) => renderOptions(e.target.value));
 
-    // --- ОШИБКИ ---
     const translateError = (msg) => {
         if (msg.includes('Invalid login credentials')) return 'Неверный email или пароль';
         if (msg.includes('User already registered')) return 'Этот email уже зарегистрирован';
@@ -189,11 +169,19 @@ async function initAuth() {
             messageDiv.className = 'auth-message success';
             messageDiv.textContent = 'Аккаунт создан! Входим...';
             
-            await supabase.auth.signInWithPassword({
+            // Пытаемся сразу войти
+            const { error: loginError } = await supabase.auth.signInWithPassword({
                 email: emailInput.value,
                 password: passwordInput.value,
             });
-            setTimeout(() => { window.location.href = appUrl; }, 800);
+
+            if (loginError) {
+                // Если вдруг включено подтверждение почты (на всякий случай)
+                messageDiv.className = 'auth-message success';
+                messageDiv.textContent = 'Аккаунт создан! Проверьте почту для входа.';
+            } else {
+                setTimeout(() => { window.location.href = appUrl; }, 800);
+            }
         }
     });
 }

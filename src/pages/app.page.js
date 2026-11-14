@@ -40,12 +40,27 @@ async function initApp() {
     // --- ИНИЦИАЛИЗАЦИЯ АВТОРИЗАЦИИ ---
     const initPage = async (session) => {
         let profile = await getUserProfile(session.user.id);
-        const userGroup = profile?.group_name || '26 АТП-2Бо';
         
-        applyUserSettings(profile?.settings);
+        // 🔥 СТРАХОВКА: Если профиля нет (например, триггер в БД не сработал)
+        if (!profile) {
+            console.warn('Профиль не найден в БД. Создаем временный.');
+            profile = {
+                id: session.user.id,
+                email: session.user.email,
+                role: 'student',
+                group_name: session.user.user_metadata?.group_name || '26 АТП-2Бо',
+                settings: {}
+            };
+            // Пытаемся создать его в базе, чтобы в следующий раз он уже был
+            await supabase.from('profiles').insert([profile]);
+        }
+
+        const userGroup = profile.group_name || '26 АТП-2Бо';
+        
+        applyUserSettings(profile.settings);
 
         // --- ЛОГИКА СТРИКА ---
-        const settings = profile?.settings || {};
+        const settings = profile.settings || {};
         const currentStreak = settings.streak || 0;
         const lastVisit = settings.last_streak_timestamp || null;
         
