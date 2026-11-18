@@ -1,6 +1,6 @@
 /**
  * @file src/pages/admin/users.admin.js
- * @description Логика вкладки "Пользователи" в админке с умным поиском.
+ * @description Логика вкладки "Пользователи" в админке с умным поиском и скелетонами.
  */
 import { getAllUsers, updateUserProfile } from '../../api/users.api.js';
 import { GROUPS } from '../../constants/groups.js';
@@ -12,10 +12,40 @@ const ROLES = ['Студент', 'Староста', 'SAP', 'Админ'];
 const roleMap = { 'Студент': 'student', 'Староста': 'starosta', 'SAP': 'sap', 'Админ': 'admin' };
 const roleWeights = { 'admin': 1, 'sap': 2, 'starosta': 3, 'student': 4 };
 
+function renderUsersSkeleton() {
+    const cardSkeleton = `
+        <div class="user-admin-card">
+            <div class="user-admin-info">
+                <div class="skeleton-block" style="width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;"></div>
+                <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                    <div class="skeleton-block" style="width: 60%; max-width: 220px; height: 16px;"></div>
+                    <div class="skeleton-block" style="width: 40%; max-width: 120px; height: 12px;"></div>
+                </div>
+            </div>
+            <div class="user-admin-controls">
+                <div class="skeleton-block" style="width: 160px; height: 42px; border-radius: 6px;"></div>
+                <div class="skeleton-block" style="width: 160px; height: 42px; border-radius: 6px;"></div>
+            </div>
+        </div>
+    `;
+    return `
+        <div class="admin-header-title" style="margin-bottom: 20px;">
+            <h2 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                Пользователи
+                <span class="skeleton-block" style="display: inline-block; width: 34px; height: 20px; border-radius: 4px;"></span>
+            </h2>
+            <div class="skeleton-block" style="max-width: 400px; height: 42px; margin-bottom: 20px; border-radius: 8px;"></div>
+        </div>
+        <div class="users-list">
+            ${cardSkeleton.repeat(5)}
+        </div>
+    `;
+}
+
 export async function initUsersTab(contentArea) {
-    contentArea.innerHTML = '<div class="admin-placeholder">Загрузка пользователей...</div>';
+    contentArea.innerHTML = renderUsersSkeleton();
     const users = await getAllUsers();
-    
+
     if (users.length === 0) {
         contentArea.innerHTML = '<div class="admin-placeholder">Пользователей пока нет.</div>';
         return;
@@ -42,11 +72,11 @@ export async function initUsersTab(contentArea) {
         }
 
         listContainer.innerHTML = '';
-        
+
         filteredUsers.forEach(u => {
             const email = u.email || 'Нет почты';
             const initial = email.charAt(0).toUpperCase();
-            
+
             const card = document.createElement('div');
             card.className = 'user-admin-card';
             card.innerHTML = `
@@ -59,25 +89,25 @@ export async function initUsersTab(contentArea) {
                 </div>
                 <div class="user-admin-controls" id="controls-${u.id}"></div>
             `;
-            
+
             const controls = card.querySelector(`#controls-${u.id}`);
-            
+
             const groupSelect = createSearchableSelect(
                 GROUPS, u.group_name || GROUPS[0], 'Группа', `hidden-group-${u.id}`,
                 async (newGroup) => { await updateUserProfile(u.id, { group_name: newGroup }); }
             );
             controls.appendChild(groupSelect);
-            
+
             const currentRoleRus = Object.keys(roleMap).find(key => roleMap[key] === u.role) || 'Студент';
             const roleSelect = createSearchableSelect(
                 ROLES, currentRoleRus, 'Роль', `hidden-role-${u.id}`,
-                async (newRoleRus) => { 
-                    await updateUserProfile(u.id, { role: roleMap[newRoleRus] }); 
+                async (newRoleRus) => {
+                    await updateUserProfile(u.id, { role: roleMap[newRoleRus] });
                     renderList(searchInput.value);
                 }
             );
             controls.appendChild(roleSelect);
-            
+
             listContainer.appendChild(card);
         });
     };

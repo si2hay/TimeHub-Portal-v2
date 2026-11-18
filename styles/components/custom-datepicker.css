@@ -1,7 +1,8 @@
 /**
  * @file styles/components/custom-datepicker.css
  * @description Стили кастомного календаря (createDatepicker).
- * Исправлено переполнение текста в ячейках (min-width: 0).
+ * Исправлено обрезание номера недели при крупных шрифтах.
+ * Ширина календаря увеличена, бейдж недели ограничен через clamp().
  */
 
 .custom-datepicker-wrapper { position: relative; width: 100%; min-width: 0; }
@@ -16,101 +17,102 @@
 .datepicker-capsule:hover { border-color: var(--accent-color); }
 
 .datepicker-dropdown {
-    position: absolute; 
-    top: 100%; 
-    left: 0; 
-    
-    /* Жестко задаем ширину, но не даем вылезти за экран */
-    width: 290px;
-    max-width: calc(100vw - 32px); 
-    
-    background: rgba(20, 22, 26, 0.98) !important; 
+    position: absolute;
+    top: 100%;
+    left: 0;
+
+    /* Ширина увеличена, но не вылезаем за экран */
+    width: 320px;
+    max-width: calc(100vw - 24px);
+
+    background: rgba(20, 22, 26, 0.98) !important;
     border: 1px solid var(--border-color);
-    border-radius: 8px; 
-    margin-top: 5px; 
+    border-radius: 8px;
+    margin-top: 5px;
     z-index: 1000;
-    
-    opacity: 0; 
-    visibility: hidden; 
+
+    opacity: 0;
+    visibility: hidden;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-    padding: 15px; 
+    padding: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    box-sizing: border-box;
 }
 
-/* Класс для выравнивания по правому краю (чтобы не вылезал справа) */
-.datepicker-dropdown.align-right {
-    left: auto;
-    right: 0;
-}
-
+.datepicker-dropdown.align-right { left: auto; right: 0; }
 .datepicker-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
 
-.dp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: bold; color: var(--text-main); line-height: 1; font-size: calc(15px * var(--font-scale)); }
+.dp-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; font-weight: bold; color: var(--text-main);
+    line-height: 1; font-size: calc(15px * var(--font-scale));
+}
 .dp-nav-btn { background: transparent; border: none; color: var(--accent-color); cursor: pointer; font-size: calc(16px * var(--font-scale)); padding: 5px; }
-.dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-bottom: 5px; line-height: 1; }
+.dp-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr); text-align: center;
+    font-size: calc(11px * var(--font-scale)); color: var(--text-muted);
+    margin-bottom: 5px; line-height: 1;
+}
 .dp-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 
 .dp-day {
-    text-align: center; padding: 6px 0; border-radius: 4px; cursor: pointer;
-    font-size: calc(13px * var(--font-scale)); color: var(--text-main); transition: background-color 0.2s; line-height: 1.1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 6px 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-main);
+    transition: background-color 0.2s;
+    line-height: 1.1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     border: 2px solid transparent;
-    
-    /* КРИТИЧЕСКИЙ ФИКС: Разрешаем ячейке сжиматься */
-    min-width: 0; 
-    overflow: hidden;
+    min-width: 0;
+    /* ФИКС: разрешаем бейджу недели не обрезаться */
+    overflow: visible;
+    box-sizing: border-box;
 }
 
 .dp-day:hover { background: rgba(128,128,128,0.2); }
 
 /* СЕГОДНЯШНИЙ ДЕНЬ — РАМКА */
-.dp-day.today { 
-    border: 2px solid var(--accent-color); 
+.dp-day.today {
+    border: 2px solid var(--accent-color);
     font-weight: bold;
 }
 
 /* ВЫБРАННЫЙ ДЕНЬ — ЗАЛИВКА */
-.dp-day.selected { 
-    background: var(--accent-color); 
-    color: var(--accent-text, #fff); 
-    font-weight: bold; 
+.dp-day.selected {
+    background: var(--accent-color);
+    color: var(--accent-text, #fff);
+    font-weight: bold;
 }
-
-.dp-day.today.selected {
-    box-shadow: 0 0 0 2px var(--bg-color) inset;
-}
-
+.dp-day.today.selected { box-shadow: 0 0 0 2px var(--bg-color) inset; }
 .dp-day.empty { cursor: default; border: none; }
 
 .dp-week-num {
-    /* Привязываем размер к общему масштабу шрифта */
-    font-size: calc(7px * var(--font-scale));
+    /* ФИКС: ограничиваем рост, чтобы «1 нед.» не обрезался при крупном шрифте */
+    font-size: clamp(7px, calc(7px * var(--font-scale)), 10px);
     color: var(--text-muted);
     opacity: 0.8;
     margin-top: 2px;
     line-height: 1;
     pointer-events: none;
-    white-space: nowrap; /* Запрещаем перенос текста "нед." */
+    white-space: nowrap;
+    display: block;
 }
 .dp-day.selected .dp-week-num { color: rgba(255,255,255,0.8); }
-.dp-day.disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    pointer-events: none;
-}
+.dp-day.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+.dp-day.disabled:hover { background: transparent; }
 
-.dp-day.disabled:hover {
-    background: transparent;
-}
-
-/* Чуть уменьшаем тень на мобилках для производительности */
 @media (max-width: 768px) {
     .datepicker-dropdown {
+        width: 300px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         padding: 12px;
     }
-    .dp-day {
-        padding: 5px 0;
-    }
+    .dp-day { padding: 5px 1px; }
 }
